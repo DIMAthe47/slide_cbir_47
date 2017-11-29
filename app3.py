@@ -3,7 +3,7 @@ import random, sys
 from PIL import Image
 from PyQt5 import QtGui
 import numpy as np
-from PyQt5.QtCore import QPoint, QRect, QSize, Qt, QPointF
+from PyQt5.QtCore import QPoint, QRect, QSize, Qt, QPointF, QRectF
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import QRubberBand, QLabel, QApplication, QMessageBox, QWidget, QScrollArea, QVBoxLayout, \
     QSizePolicy, QHBoxLayout, QSlider, QGraphicsScene, QGraphicsView, QGraphicsPixmapItem, QGraphicsSceneWheelEvent, \
@@ -58,31 +58,56 @@ class SlideViewer3(QWidget):
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
         self.origin = QPoint()
         self.view = QGraphicsView()
-        self.view.setRenderHint(QPainter.Antialiasing)
-        self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        # self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.scene = QGraphicsScene()
-        # self.scene.addItem(self.item)
-        # self.scene.addRect(self.scene.sceneRect())
         self.view.setScene(self.scene)
-        layout = QHBoxLayout()
+        layout = QVBoxLayout()
         layout.addWidget(self.view)
-        self.setLayout(layout)
-        self.view.eventFilter = self.sceneEventFilter
-        # self.view.eventFilter = self.sceneEventFilter
 
-    def sceneEventFilter(self, graphicsitem, event):
+        self.setLayout(layout)
+
+        self.level_label = QLabel()
+        layout.addWidget(self.level_label)
+
+        # self.view.installEventFilter(self)
+        # self.installEventFilter(self)
+        self.view.viewport().installEventFilter(self)
+
+    def eventFilter(self, qobj: 'QObject', event: 'QEvent'):
+        # print(event)
         if isinstance(event, QGraphicsSceneWheelEvent):
-            print("QGraphicsSceneWheelEvent", event.pos())
-            pass
+            # print("QGraphicsSceneWheelEvent", "eventFilter", qobj, event)
+            return True
         if isinstance(event, QWheelEvent):
-            pos = self.view.mapToScene(event.pos())
-            # print(pos)
-            # print(event.pos())
+            # print("QWheelEvent", "eventFilter", qobj, event)
+            self.last_mouse_pos_scene = self.view.mapToScene(event.pos())
+            self.last_rect_scene = self.view.mapToScene(self.view.viewport().pos())
+            # print("eventFilter", event.pos(), "->", self.last_mouse_pos_scene)
+            print("eventFilter last_rect_scene", self.view.viewport().pos(), "->", self.last_rect_scene)
             # чтобы колёсико отвечало только за зум, а не за скроллинг
-            self.last_mouse_pos = event.pos()
-            # print("sceneEventFilter", event.pos())
+            self.process_view_port_wheel_event(event)
             return True
         return False
+
+    def process_view_port_wheel_event(self, event: QWheelEvent):
+        zoom_in = 1.25
+        zoom_out = 1 / 1.25
+
+        # self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        # self.view.setResizeAnchor(QGraphicsView.NoAnchor)
+
+        zoom_ = None
+        if event.angleDelta().y() > 0:
+            zoom_ = zoom_in
+        elif event.angleDelta().y() < 0:
+            zoom_ = zoom_out
+
+        if (zoom_):
+            self.mouse_wheel_pos_scene = self.view.mapToScene(event.pos())
+            # print("wheelEvent", event.pos(), "->", self.mouse_wheel_pos_scene)
+            self.update_scale(zoom_)
+
+        event.accept()
 
     def pilimage_to_pixmap(self, pilimage):
         # pilimage.show()
@@ -94,25 +119,31 @@ class SlideViewer3(QWidget):
         self.slide = openslide.OpenSlide(slide_path)
         self.reset_slide_params()
         self.tiles_pyramid_models = []
-        self.generate_tiles_for_level(0, (500, 500), False)
-        self.generate_tiles_for_level(1, (400, 400), False)
-        self.generate_tiles_for_level(2, (300, 300), True)
-        self.mouse_wheel_pos_scene = QPoint(0, 0)
-        self.updateLevelsVisibilities()
+        self.generate_tiles_for_level(0, (200, 200), False)
+        self.generate_tiles_for_level(1, (300, 300), False)
+        self.generate_tiles_for_level(2, (400, 400), True)
+        self.last_mouse_pos_scene = QPointF(0, 0)
+        self.update_scale(1)
+        self.view.fitInView(self.scene.sceneRect())
 
     def generate_tiles_for_level(self, level, tile_size, visible):
         tiles_rects = []
         x = 0
         y = 0
         tiles_grid_size = self.slide.level_dimensions[level]
-        x_max = tiles_grid_size[0]
-        y_max = tiles_grid_size[1]
+        x_size = tiles_grid_size[0]
+        y_size = tiles_grid_size[1]
         x_step = tile_size[0]
         y_step = tile_size[1]
-        while y < tiles_grid_size[0]:
-            while x < tiles_grid_size[1]:
-                if x + x_step < x_max and y + y_step < y_max:
-                    tiles_rects.append((x, y, tile_size[0], tile_size[1]))
+        while y < y_size:
+            while x < x_size:
+                w = x_step
+                if x + w >= x_size:
+                    w = x_size - x
+                h = y_step
+                if y + h >= y_size:
+                    h = y_size - y
+                tiles_rects.append((x, y, w, h))
                 x += x_step
             x = 0
             y += y_step
@@ -136,6 +167,7 @@ class SlideViewer3(QWidget):
         tiles_graphics_group.setVisible(visible)
         self.scene.addItem(tiles_graphics_group)
         tile_pyramid_model = {
+            "level": level,
             "tiles_grid_size": tiles_grid_size,
             "tile_size": tile_size,
             "tiles_rects": tiles_rects,
@@ -148,82 +180,78 @@ class SlideViewer3(QWidget):
         print("scene event", event)
 
     def reset_slide_params(self):
-        self.last_level = -1
-        self.downsample_factor = 16
-        self.zoom_factor = 1 / self.downsample_factor
+        start_downsample_factor = 16
+        self.zoom_factor = 1 / start_downsample_factor
         self.last_mouse_pos = QPoint(0, 0)
-        # self.zoom_factor = 0
-        # self.tile_size = self.slide.level_dimensions[0]
-        self.tile_location = (0, 0)
 
     def get_view_size(self):
         size = self.view.size()
         return (size.width(), size.height())
 
-    def updateLevelsVisibilities(self):
+    def set_visible_level(self, level):
+        for tile_pyramid_model in self.tiles_pyramid_models:
+            if tile_pyramid_model["level"] == level:
+                tile_pyramid_model["tiles_graphics_group"].setVisible(True)
+            else:
+                tile_pyramid_model["tiles_graphics_group"].setVisible(False)
+
+    def get_visible_level(self):
+        for tile_pyramid_model in self.tiles_pyramid_models:
+            if tile_pyramid_model["tiles_graphics_group"].isVisible():
+                return tile_pyramid_model["level"]
+
+    def get_level_relative_scale(self, new_level):
+        level = self.get_visible_level()
+        level_relative_scale = self.get_downsample(level) / self.get_downsample(new_level)
+        return level_relative_scale
+
+    def get_downsample(self, level):
+        return self.slide.level_downsamples[level]
+
+    def get_level_size(self, level):
+        return self.slide.level_dimensions[level]
+
+    def get_scene_rect_for_level(self, level):
+        size_ = self.get_level_size(level)
+        rect = QRectF(-size_[0] / 2, -size_[1] / 2, size_[0], size_[1])
+        return rect
+
+    def update_scale(self, zoom):
+        self.zoom_factor *= zoom
         downsample = 1 / self.zoom_factor
         best_level = self.slide.get_best_level_for_downsample(downsample)
-        for tile_pyramid_model in self.tiles_pyramid_models:
-            tile_pyramid_model["tiles_graphics_group"].setVisible(False)
+        # print("best_level", best_level)
 
-        # self.scene.addRect(0, 0, 50, 50)
-        size_ = self.tiles_pyramid_models[best_level]["tiles_grid_size"]
-        size_ = [s * downsample for s in size_]
-        # self.scene.addRect(-size_[0] / 2, -size_[1] / 2, *size_)
-        # for graphics_tile in self.tiles_pyramid_models[best_level]["tiles_graphics"]:
-        #     graphics_tile.setPos((graphics_tile.x_y_w_h[0] - self.tiles_pyramid_models[best_level]["tiles_grid_size"][
-        #         0] / 2) * downsample,
-        #                          (graphics_tile.x_y_w_h[1] - self.tiles_pyramid_models[best_level]["tiles_grid_size"][
-        #                              1] / 2) * downsample)
-        #     graphics_tile.setDownsaple(downsample)
-        self.tiles_pyramid_models[best_level]["tiles_graphics_group"].setVisible(True)
         level_downsample = self.slide.level_downsamples[best_level]
         new_zoom_factor = 1 / level_downsample
+        # self.zoom_factor = new_zoom_factor
         new_scale = self.zoom_factor / new_zoom_factor
+        # print("new_scale", new_scale)
+        new_mouse_pos_scene = self.last_mouse_pos_scene * self.get_level_relative_scale(best_level)
+        self.scene.addRect(new_mouse_pos_scene.x(), new_mouse_pos_scene.y(), 20, 20)
+        self.scene.addRect(0, 0, 100, 100)
+        self.scene.addText("Origin")
 
-        if self.last_mouse_pos:
-            new_mouse_pos_scene = self.mouse_wheel_pos_scene * (
-                self.slide.level_downsamples[
-                    self.prev_best_level] / level_downsample)
-            self.scene.addRect(new_mouse_pos_scene.x(), new_mouse_pos_scene.y(), 20, 20)
-            # self.scene.addRect(0, 0, 100, 100)
-            # self.view.centerOn(new_mouse_pos_scene)* downsample
+        self.view.resetTransform()
+        # dxy = new_mouse_pos_scene - self.last_mouse_pos_scene
+        # self.view.horizontalScrollBar().setValue(self.view.horizontalScrollBar().value() + dxy.x())
+        # self.view.verticalScrollBar().setValue(self.view.verticalScrollBar().value() + dxy.y())
 
-        # self.view.resetTransform()
-        # self.view.scale(new_scale, new_scale)
-        # self.view.centerOn(new_mouse_pos_scene)
+        self.scene.setSceneRect(self.get_scene_rect_for_level(best_level))
+        self.view.scale(new_scale, new_scale)
 
-        # self.view.centerOn(QPointF(50, 50))
-        print(self.view.mapToScene(self.view.pos()))
+        self.view.centerOn(new_mouse_pos_scene)
+
+        # self.view.translate(3000,1000)
+
+        new_mouse_pos_global = self.view.mapToGlobal(self.view.mapFromScene(new_mouse_pos_scene))
+        # self.view.cursor().setPos(new_mouse_pos_global)
+
         self.prev_best_level = best_level
+        self.set_visible_level(best_level)
 
-        self.scene.invalidate()
-
-    def wheelEvent(self, event: QMouseEvent):
-        zoom_in = 1.25
-        zoom_out = 1 / 1.25
-
-        # self.view.setTransformationAnchor(QGraphicsView.NoAnchor)
-        # self.view.setResizeAnchor(QGraphicsView.NoAnchor)
-        # oldPos = self.view.mapToScene(event.pos())
-
-        zoom_ = None
-        if event.angleDelta().y() > 0:
-            zoom_ = zoom_in
-        elif event.angleDelta().y() < 0:
-            zoom_ = zoom_out
-
-        if (zoom_):
-            self.mouse_wheel_pos_scene = self.view.mapToScene(event.pos() - self.view.pos())
-            # self.view.scale(zoom_, zoom_)
-            # self.zoom_factor *= zoom_
-            self.updateLevelsVisibilities()
-
-        # newPos = self.view.mapToScene(event.pos())
-        # delta = newPos - oldPos
-        # self.view.translate(delta.x(), delta.y())
-
-        event.accept()
+        # self.scene.invalidate()
+        self.level_label.setText("level: {} ({}, {})".format(best_level, *self.get_level_size(best_level)))
 
     def mousePressEvent(self, event: QtGui.QMouseEvent):
         pos = self.view.mapToScene(event.pos() - self.view.pos())
