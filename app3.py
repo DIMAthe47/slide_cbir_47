@@ -81,13 +81,14 @@ class SlideViewer3(QWidget):
         self.slide = openslide.OpenSlide(slide_path)
         self.reset_slide_params()
         self.tiles_pyramid_models = []
-        self.generate_tiles_for_level(0, (200, 200), False)
-        self.generate_tiles_for_level(1, (300, 300), False)
-        self.generate_tiles_for_level(2, (400, 400), True)
+        self.generate_tiles_for_level(0, (500, 500), False)
+        self.generate_tiles_for_level(1, (500, 500), False)
+        self.generate_tiles_for_level(2, (500, 500), True)
         self.last_mouse_pos_scene = QPointF(0, 0)
         self.mouse_view_diff_scene = QPointF(0, 0)
         self.update_scale(1)
         self.view.fitInView(self.scene.sceneRect())
+        print(self.view.mapToScene(self.view.rect()).boundingRect())
 
     def eventFilter(self, qobj: 'QObject', event: 'QEvent'):
         # print(event)
@@ -143,6 +144,8 @@ class SlideViewer3(QWidget):
             tiles_pyramid_model["tiles_graphics_group"].addToGroup(item)
             tiles_pyramid_model["selected_graphics_rect"] = item
         self.view.invalidateScene()
+        self.update()
+        self.view.viewport().update()
 
     def sceneEvent(self, event):
         print("scene event", event)
@@ -174,10 +177,12 @@ class SlideViewer3(QWidget):
         # self.view.verticalScrollBar().setValue(self.view.verticalScrollBar().value() + dxy.y())
 
         self.scene.setSceneRect(self.get_scene_rect_for_level(best_level))
+
+        print(new_scale)
         self.view.scale(new_scale, new_scale)
 
-        # new_center_on=new_mouse_pos_scene
-        new_center_on = new_mouse_pos_scene - self.mouse_view_diff_scene
+        new_center_on = new_mouse_pos_scene
+        # new_center_on = new_mouse_pos_scene - self.mouse_view_diff_scene
         print("new_center_on", new_center_on)
         self.view.centerOn(new_center_on)
 
@@ -323,7 +328,8 @@ if __name__ == "__main__":
     # dirpath = '/home/dimathe47/data/geo_tiny/Segm_RemoteSensing1/cropped/poligon_minsk_1_yandex_z18_train_0_0.jpg'
     # dirpath = '/home/dimathe47/data/geo_tiny/S/egm_RemoteSensing1/poligon_minsk_1_yandex_z18_train.jpg'
     # slide_path = '/home/dimathe47/Downloads/CMU-1-Small-Region.svs'
-    slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
+    # slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
+    slide_path = r'C:\Users\dmitriy\Downloads\JP2K-33003-1.svs'
     slideViewer = SlideViewer3()
     layout.addWidget(slideViewer)
 

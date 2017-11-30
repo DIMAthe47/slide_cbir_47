@@ -2,7 +2,7 @@ import typing
 
 from PIL.ImageQt import ImageQt
 from PyQt5 import QtGui
-from PyQt5.QtCore import QRectF, QRect, Qt
+from PyQt5.QtCore import QRectF, QRect, Qt, QSize
 
 from PyQt5.QtWidgets import QGraphicsItem, QWidget
 import openslide
@@ -19,6 +19,7 @@ class GraphicsTile(QGraphicsItem):
         self.level = level
         self.downsample = downsample
         self.setAcceptedMouseButtons(Qt.NoButton)
+        self.setCacheMode(QGraphicsItem.ItemCoordinateCache, self.rect.size())
 
     def pilimage_to_pixmap(self, pilimage):
         # pilimage.show()
@@ -31,7 +32,8 @@ class GraphicsTile(QGraphicsItem):
 
     def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem',
               widget: typing.Optional[QWidget] = ...):
-        # print("paint")
+        print("paint")
+        print(self.cacheMode())
         # painter.drawRect(self.rect)
         # painter.drawRect(0,0,100,100)
         x = int(self.x_y_w_h[0] * self.downsample)
