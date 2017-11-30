@@ -3,7 +3,7 @@ import random, sys
 from PIL import Image
 from PyQt5 import QtGui
 import numpy as np
-from PyQt5.QtCore import QPoint, QRect, QSize, Qt, QPointF, QRectF
+from PyQt5.QtCore import QPoint, QRect, QSize, Qt, QPointF, QRectF, QEvent
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import QRubberBand, QLabel, QApplication, QMessageBox, QWidget, QScrollArea, QVBoxLayout, \
     QSizePolicy, QHBoxLayout, QSlider, QGraphicsScene, QGraphicsView, QGraphicsPixmapItem, QGraphicsSceneWheelEvent, \
@@ -13,6 +13,7 @@ from PIL.ImageQt import ImageQt
 import time
 
 from GraphicsTIle import GraphicsTile
+from SelectedRect import SelectedRect
 
 
 class Timer:
@@ -55,14 +56,13 @@ def matrix_to_pixmap(image_matrix):
 class SlideViewer3(QWidget):
     def __init__(self, parent=None):
         super().__init__()
-        self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
-        self.origin = QPoint()
         self.view = QGraphicsView()
         # self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.scene = QGraphicsScene()
         self.view.setScene(self.scene)
         layout = QVBoxLayout()
         layout.addWidget(self.view)
+        print(self.setMouseTracking(True))
 
         self.setLayout(layout)
 
@@ -72,6 +72,10 @@ class SlideViewer3(QWidget):
         # self.view.installEventFilter(self)
         # self.installEventFilter(self)
         self.view.viewport().installEventFilter(self)
+
+        self.rubber_band = QRubberBand(QRubberBand.Rectangle, self)
+        self.mouse_press_view = QPoint()
+        self.rects = []
 
     def setSlide(self, slide_path):
         self.slide = openslide.OpenSlide(slide_path)
@@ -88,9 +92,9 @@ class SlideViewer3(QWidget):
     def eventFilter(self, qobj: 'QObject', event: 'QEvent'):
         # print(event)
         if isinstance(event, QGraphicsSceneWheelEvent):
-            # print("QGraphicsSceneWheelEvent", "eventFilter", qobj, event)
+            print("QGraphicsSceneWheelEvent", "eventFilter", qobj, event)
             return True
-        if isinstance(event, QWheelEvent):
+        elif isinstance(event, QWheelEvent):
             # print("QWheelEvent", "eventFilter", qobj, event)
             self.last_mouse_pos_scene = self.view.mapToScene(event.pos())
             self.last_rect_scene = self.view.mapToScene(self.view.viewport().pos())
@@ -103,7 +107,42 @@ class SlideViewer3(QWidget):
             # чтобы колёсико отвечало только за зум, а не за скроллинг
             self.process_view_port_wheel_event(event)
             return True
+        elif isinstance(event, QMouseEvent):
+            if event.button() == Qt.LeftButton:
+                if event.type() == QEvent.MouseButtonPress:
+                    self.mouse_press_view = QPoint(event.pos())
+                    self.rubber_band.setGeometry(QRect(self.mouse_press_view, QSize()))
+                    self.rubber_band.show()
+                    return True
+                if event.type() == QEvent.MouseButtonRelease:
+                    self.rubber_band.hide()
+                    self.add_rect()
+                    return True
+            elif event.type() == QEvent.MouseMove:
+                if not self.mouse_press_view.isNull():
+                    self.rubber_band.setGeometry(QRect(self.mouse_press_view, event.pos()).normalized())
+                    return True
+
         return False
+
+    def add_rect(self):
+        pos = self.rubber_band.pos() - self.view.pos()
+        pos_scene = self.view.mapToScene(pos)
+        rect = self.rubber_band.rect()
+        rect_scene = self.view.mapToScene(rect).boundingRect()
+        downsample = self.get_current_downsample()
+        pos_0 = pos_scene * downsample
+        rect_width_0 = rect_scene.width() * downsample
+        rect_height_0 = rect_scene.height() * downsample
+        for tiles_pyramid_model in self.tiles_pyramid_models:
+            downsample = self.get_downsample(tiles_pyramid_model["level"])
+            rect_real_sized = QRect(pos_0.x() / downsample, pos_0.y() / downsample, rect_width_0 / downsample,
+                                    rect_height_0 / downsample)
+            item = SelectedRect(rect_real_sized, 1)
+            tiles_pyramid_model["tiles_graphics_group"].removeFromGroup(tiles_pyramid_model["selected_graphics_rect"])
+            tiles_pyramid_model["tiles_graphics_group"].addToGroup(item)
+            tiles_pyramid_model["selected_graphics_rect"] = item
+        self.view.invalidateScene()
 
     def sceneEvent(self, event):
         print("scene event", event)
@@ -125,9 +164,9 @@ class SlideViewer3(QWidget):
         new_scale = self.zoom_factor / new_zoom_factor
         # print("new_scale", new_scale)
         new_mouse_pos_scene = self.last_mouse_pos_scene * self.get_level_relative_scale(best_level)
-        self.scene.addRect(new_mouse_pos_scene.x(), new_mouse_pos_scene.y(), 20, 20)
-        self.scene.addRect(0, 0, 100, 100)
-        self.scene.addText("Origin")
+        # self.scene.addRect(new_mouse_pos_scene.x(), new_mouse_pos_scene.y(), 20, 20)
+        # self.scene.addRect(0, 0, 100, 100)
+        # self.scene.addText("Origin")
 
         self.view.resetTransform()
         # dxy = new_mouse_pos_scene - self.last_mouse_pos_scene
@@ -153,11 +192,6 @@ class SlideViewer3(QWidget):
         # self.scene.invalidate()
         self.level_label.setText("level: {} ({}, {})".format(best_level, *self.get_level_size(best_level)))
 
-    def mousePressEvent(self, event: QtGui.QMouseEvent):
-        pos = self.view.mapToScene(event.pos() - self.view.pos())
-        self.scene.addRect(pos.x(), pos.y(), 50, 50)
-        print(pos)
-
     def process_view_port_wheel_event(self, event: QWheelEvent):
         zoom_in = 1.25
         zoom_out = 1 / zoom_in
@@ -177,6 +211,12 @@ class SlideViewer3(QWidget):
             self.update_scale(zoom_)
 
         event.accept()
+
+    # def mousePressEvent(self, event: QtGui.QMouseEvent):
+    #     pos = self.view.mapToScene(event.pos() - self.view.pos())
+    #     self.scene.addRect(pos.x(), pos.y(), 50, 50)
+    #     print(pos)
+
 
     def pilimage_to_pixmap(self, pilimage):
         # pilimage.show()
@@ -210,6 +250,9 @@ class SlideViewer3(QWidget):
 
     def get_level_size(self, level):
         return self.slide.level_dimensions[level]
+
+    def get_current_downsample(self):
+        return self.get_downsample(self.get_visible_level())
 
     def get_scene_rect_for_level(self, level):
         size_ = self.get_level_size(level)
@@ -262,7 +305,8 @@ class SlideViewer3(QWidget):
             "tile_size": tile_size,
             "tiles_rects": tiles_rects,
             "tiles_graphics": tiles_graphics,
-            "tiles_graphics_group": tiles_graphics_group
+            "tiles_graphics_group": tiles_graphics_group,
+            "selected_graphics_rect": None
         }
         self.tiles_pyramid_models.append(tile_pyramid_model)
 
@@ -285,6 +329,6 @@ if __name__ == "__main__":
 
     win.show()
 
-slideViewer.setSlide(slide_path)
+    slideViewer.setSlide(slide_path)
 
-sys.exit(app.exec_())
+    sys.exit(app.exec_())
