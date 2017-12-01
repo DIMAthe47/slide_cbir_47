@@ -79,15 +79,21 @@ class SlideViewer3(QWidget):
 
     def setSlide(self, slide_path):
         self.slide = openslide.OpenSlide(slide_path)
-        self.reset_slide_params()
         self.tiles_pyramid_models = []
         self.generate_tiles_for_level(0, (500, 500), False)
         self.generate_tiles_for_level(1, (500, 500), False)
         self.generate_tiles_for_level(2, (500, 500), True)
         self.last_mouse_pos_scene = QPointF(0, 0)
         self.mouse_view_diff_scene = QPointF(0, 0)
+        self.last_mouse_pos = QPoint(0, 0)
+        self.start_downsample_factor = 32
+        self.zoom_factor = 1 / self.start_downsample_factor
+        # view_size = self.view.size()
+        # min_level_size = self.get_level_size(2)
+        # self.zoom_factor = min((view_size.width() / min_level_size[0], view_size.height() / min_level_size[1]))
+
         self.update_scale(1)
-        self.view.fitInView(self.scene.sceneRect())
+        # self.view.fitInView(self.scene.sceneRect())
         print(self.view.mapToScene(self.view.rect()).boundingRect())
 
     def eventFilter(self, qobj: 'QObject', event: 'QEvent'):
@@ -149,11 +155,6 @@ class SlideViewer3(QWidget):
 
     def sceneEvent(self, event):
         print("scene event", event)
-
-    def reset_slide_params(self):
-        start_downsample_factor = 16
-        self.zoom_factor = 1 / start_downsample_factor
-        self.last_mouse_pos = QPoint(0, 0)
 
     def update_scale(self, zoom):
         self.zoom_factor *= zoom
@@ -328,8 +329,8 @@ if __name__ == "__main__":
     # dirpath = '/home/dimathe47/data/geo_tiny/Segm_RemoteSensing1/cropped/poligon_minsk_1_yandex_z18_train_0_0.jpg'
     # dirpath = '/home/dimathe47/data/geo_tiny/S/egm_RemoteSensing1/poligon_minsk_1_yandex_z18_train.jpg'
     # slide_path = '/home/dimathe47/Downloads/CMU-1-Small-Region.svs'
-    # slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
-    slide_path = r'C:\Users\dmitriy\Downloads\JP2K-33003-1.svs'
+    slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
+    # slide_path = r'C:\Users\dmitriy\Downloads\JP2K-33003-1.svs'
     slideViewer = SlideViewer3()
     layout.addWidget(slideViewer)
 
