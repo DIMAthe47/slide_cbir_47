@@ -12,7 +12,7 @@ class GraphicsTile(QGraphicsItem):
     def __init__(self, x_y_w_h, slide: openslide.OpenSlide, level, downsample):
         super().__init__()
         self.x_y_w_h = x_y_w_h
-        self.rect = QRect(x_y_w_h[0], x_y_w_h[1], x_y_w_h[2] * downsample, x_y_w_h[3] * downsample)
+        # self.rect = QRect(x_y_w_h[0], x_y_w_h[1], x_y_w_h[2] * downsample, x_y_w_h[3] * downsample)
         # self.rect = QRect(0, 0, x_y_w_h[2] * downsample, x_y_w_h[3] * downsample)
         self.rect = QRect(x_y_w_h[0], x_y_w_h[1], x_y_w_h[2], x_y_w_h[3])
         self.slide = slide
@@ -32,8 +32,8 @@ class GraphicsTile(QGraphicsItem):
 
     def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem',
               widget: typing.Optional[QWidget] = ...):
-        print("paint")
-        print(self.cacheMode())
+        # print("paint")
+        # print(self.cacheMode())
         # painter.drawRect(self.rect)
         # painter.drawRect(0,0,100,100)
         x = int(self.x_y_w_h[0] * self.downsample)
