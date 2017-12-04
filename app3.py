@@ -144,13 +144,14 @@ class SlideViewer3(QWidget):
         self.last_mouse_pos_scene = QPointF(0, 0)
         self.mouse_view_diff_scene = QPointF(0, 0)
         self.last_mouse_pos = QPoint(0, 0)
-        self.start_downsample_factor = 32
-        self.zoom_factor = 1 / self.start_downsample_factor
+        # self.start_downsample_factor = 32
+        # self.zoom_factor = 1 / self.start_downsample_factor
+        self.logical_zoom = 1
+        self.level_relative_zoom = 1
         # view_size = self.view.size()
         # min_level_size = self.get_level_size(2)
         # self.zoom_factor = min((view_size.width() / min_level_size[0], view_size.height() / min_level_size[1]))
         # self.view.scale(0.2, 0.2)
-        self.zoom_for_level = 1
         self.update_scale(QPoint(0, 0), 1)
 
         self.selected_rect_downsample = 1
@@ -246,94 +247,77 @@ class SlideViewer3(QWidget):
     def sceneEvent(self, event):
         print("scene event", event)
 
+    def get_current_level_downsample(self):
+        best_level = self.slide.get_best_level_for_downsample(1 / self.logical_zoom)
+        level_downsample = self.slide.level_downsamples[best_level]
+        return level_downsample
+
+    def set_scene_rect_for_current_level(self):
+        best_level = self.slide.get_best_level_for_downsample(1 / self.logical_zoom)
+        self.scene.setSceneRect(self.get_scene_rect_for_level(best_level))
+
+    def set_visible_for_current_level(self):
+        best_level = self.slide.get_best_level_for_downsample(1 / self.logical_zoom)
+        level_downsample = self.slide.level_downsamples[best_level]
+        self.set_visible_level(best_level)
+        level_size = self.get_level_size(best_level)
+        self.level_label.setText(
+            "level: {} ({}, {}), level_downsample: {}".format(best_level, level_size[0], level_size[1],
+                                                              level_downsample))
+
     def update_scale(self, mouse_pos: QPoint, zoom):
-        old_best_level = self.slide.get_best_level_for_downsample(1 / self.zoom_factor)
-        old_level_downsample = self.slide.level_downsamples[old_best_level]
-
-        self.zoom_factor *= zoom
-        self.zoom_for_level *= zoom
-        new_downsample = 1 / self.zoom_factor
-        new_level = self.slide.get_best_level_for_downsample(new_downsample)
-        new_level_downsample = self.slide.level_downsamples[new_level]
-
-        new_level_zoom_factor = 1 / new_level_downsample
-        # self.zoom_factor = new_zoom_factor
-        new_scale = self.zoom_factor / new_level_zoom_factor
-        # print("new_scale", new_scale)
-
-
-        level_scale_delta = 1 / (new_level_downsample / old_level_downsample)
-        # print("level_scale_delta", level_scale_delta)
-        # best_level = 2
-        # new_scale = zoom
-        # new_scale = 1.15
-
+        old_level_downsample = self.get_current_level_downsample()
+        self.logical_zoom *= zoom
+        new_level_downsample = self.get_current_level_downsample()
         old_view_pos_scene = self.view.mapToScene(self.view.pos())
         old_mouse_pos_scene = self.view.mapToScene(mouse_pos) - old_view_pos_scene
-        # print("old_view_pos_scene", point_to_str(old_view_pos_scene))
-        #
-        # print("dx", self.view.transform().dx())
+        mouse_pos_scene = self.view.mapToScene(mouse_pos)
+        view_pos_scene = self.view.mapToScene(self.view.rect().topLeft())
+
+        if old_level_downsample == new_level_downsample:
+            self.set_scene_rect_for_current_level()
 
         new_scale = zoom
-        print("new_scale", new_scale)
-        # print("before set rect:", self.view_pos_scene_str())
-        #
-        # print("after set rect:", self.view_pos_scene_str())
-        if old_best_level == new_level:
-            self.scene.setSceneRect(self.get_scene_rect_for_level(new_level))
-            # self.view.scale(new_scale, new_scale)
+        self.view.scale(new_scale, new_scale)
+        self.level_relative_zoom *= new_scale
 
-            # print("dx", self.view.transform().dx())
-            new_view_pos_scene = self.view.mapToScene(self.view.pos())
-
-            new_mouse_pos_scene = self.view.mapToScene(mouse_pos) - new_view_pos_scene
-            new_mouse_pos_scene *= level_scale_delta
-            mouse_pos_delta = new_mouse_pos_scene - old_mouse_pos_scene
-            # self.view.translate(old_view_pos_scene.x(), old_view_pos_scene.y())
-
-            # new_view_pos_scene = old_view_pos_scene
-            new_view_pos_scene *= level_scale_delta
-            # print("new_view_pos_scene ", point_to_str(new_view_pos_scene))
-            view_delta = new_view_pos_scene - old_view_pos_scene
-
-            # view_delta = QPoint(0, 0)
-            # mouse_pos_delta=QPoint(0,0)
-            pos_delta = mouse_pos_delta + view_delta
-            # mouse_pos_delta*=level_scale_delta
-
-            # print("pos_delta", pos_delta.x())
-
-            # self.view.translate(pos_delta.x(), pos_delta.y())
-        else:
-            mouse_pos_scene = self.view.mapToScene(mouse_pos)
-            view_pos_scene = self.view.mapToScene(self.view.rect().topLeft())
-            a1 = (mouse_pos_scene - view_pos_scene) / level_scale_delta
-            self.resetTransform()
-            self.scene.setSceneRect(self.get_scene_rect_for_level(new_level))
-            shift_scene = mouse_pos_scene - a1
+        new_view_pos_scene = self.view.mapToScene(self.view.pos())
+        new_mouse_pos_scene = self.view.mapToScene(mouse_pos)
+        new_mouse_pos_scene = self.view.mapToScene(mouse_pos) - new_view_pos_scene
+        mouse_pos_delta = new_mouse_pos_scene - old_mouse_pos_scene
+        view_delta = new_view_pos_scene - old_view_pos_scene
+        pos_delta = mouse_pos_delta + view_delta
+        # print("pos_delta", pos_delta.x())
+        self.view.translate(pos_delta.x(), pos_delta.y())
+        if old_level_downsample != new_level_downsample:
+            new_view_pos_scene = self.view.mapToScene(self.view.rect().topLeft())
+            level_scale_delta = 1 / (new_level_downsample / old_level_downsample)
+            # a1 = (mouse_pos_scene - view_pos_scene) / level_scale_delta
+            # shift_scene = mouse_pos_scene - a1
+            shift_scene = new_view_pos_scene
             shift_scene *= level_scale_delta
+            self.resetTransform()
+            self.set_scene_rect_for_current_level()
+            new_scale = self.level_relative_zoom * (new_level_downsample) / old_level_downsample
+            self.view.scale(new_scale, new_scale)
             self.view.translate(-shift_scene.x(), -shift_scene.y())
-            # self.view.centerOn(rect_center_scene)
-            # print(self.view.rect().center())
-
             print("mouse_pos_scene", mouse_pos_scene)
             print("view_pos_scene", view_pos_scene)
+            self.scene.addRect(
+                QRectF(self.view.mapToScene(mouse_pos), self.view.mapToScene(mouse_pos) + QPointF(50, 50)))
+            # self.zoom_for_level = 1 / 32
 
-            self.zoom_for_level = 1
+            self.level_relative_zoom = new_scale
+            # self.logical_ = new_scale
 
-            self.prev_best_level = new_level
-            self.set_visible_level(new_level)
-
-            # self.scene.invalidate()
-            level_size = self.get_level_size(new_level)
-            self.level_label.setText(
-                "level: {} ({}, {}), level_downsample: {}".format(new_level, level_size[0], level_size[1],
-                                                                  new_level_downsample))
+        self.old_level_downsample = new_level_downsample
+        self.set_visible_for_current_level()
 
     def resetTransform(self):
         print("view_pos before resetTransform:", self.view_pos_scene_str())
         print("dx before resetTransform:", self.view.transform().dx())
         print("horizontalScrollBar before resetTransform:", self.view.horizontalScrollBar().value())
+        print("horizontalScrollBar singleStep before resetTransform:", self.view.horizontalScrollBar().singleStep())
         self.view.resetTransform()
         self.view.horizontalScrollBar().setValue(0)
         self.view.verticalScrollBar().setValue(0)
