@@ -266,51 +266,37 @@ class SlideViewer3(QWidget):
                                                               level_downsample))
 
     def update_scale(self, mouse_pos: QPoint, zoom):
+        old_mouse_pos_scene = self.view.mapToScene(mouse_pos)
         old_level_downsample = self.get_current_level_downsample()
-        self.logical_zoom *= zoom
-        new_level_downsample = self.get_current_level_downsample()
-        old_view_pos_scene = self.view.mapToScene(self.view.pos())
-        old_mouse_pos_scene = self.view.mapToScene(mouse_pos) - old_view_pos_scene
-        mouse_pos_scene = self.view.mapToScene(mouse_pos)
-        view_pos_scene = self.view.mapToScene(self.view.rect().topLeft())
 
+        self.logical_zoom *= zoom
+        self.view.scale(zoom, zoom)
+        self.level_relative_zoom *= zoom
+
+        new_level_downsample = self.get_current_level_downsample()
         if old_level_downsample == new_level_downsample:
             self.set_scene_rect_for_current_level()
 
-        new_scale = zoom
-        self.view.scale(new_scale, new_scale)
-        self.level_relative_zoom *= new_scale
-
-        new_view_pos_scene = self.view.mapToScene(self.view.pos())
         new_mouse_pos_scene = self.view.mapToScene(mouse_pos)
-        new_mouse_pos_scene = self.view.mapToScene(mouse_pos) - new_view_pos_scene
         mouse_pos_delta = new_mouse_pos_scene - old_mouse_pos_scene
-        view_delta = new_view_pos_scene - old_view_pos_scene
-        pos_delta = mouse_pos_delta + view_delta
-        # print("pos_delta", pos_delta.x())
+        pos_delta = mouse_pos_delta
         self.view.translate(pos_delta.x(), pos_delta.y())
+
         if old_level_downsample != new_level_downsample:
             new_view_pos_scene = self.view.mapToScene(self.view.rect().topLeft())
             level_scale_delta = 1 / (new_level_downsample / old_level_downsample)
-            # a1 = (mouse_pos_scene - view_pos_scene) / level_scale_delta
-            # shift_scene = mouse_pos_scene - a1
             shift_scene = new_view_pos_scene
             shift_scene *= level_scale_delta
             self.resetTransform()
             self.set_scene_rect_for_current_level()
-            new_scale = self.level_relative_zoom * (new_level_downsample) / old_level_downsample
-            self.view.scale(new_scale, new_scale)
+            scale_ = self.level_relative_zoom * new_level_downsample / old_level_downsample
+            #scale_ comes from equation (size*zoom/downsample) == (new_size*new_zoom/new_downsample)
+            self.view.scale(scale_, scale_)
             self.view.translate(-shift_scene.x(), -shift_scene.y())
-            print("mouse_pos_scene", mouse_pos_scene)
-            print("view_pos_scene", view_pos_scene)
-            self.scene.addRect(
-                QRectF(self.view.mapToScene(mouse_pos), self.view.mapToScene(mouse_pos) + QPointF(50, 50)))
-            # self.zoom_for_level = 1 / 32
+            # self.scene.addRect(
+            #     QRectF(self.view.mapToScene(mouse_pos), self.view.mapToScene(mouse_pos) + QPointF(50, 50)))
+            self.level_relative_zoom = scale_
 
-            self.level_relative_zoom = new_scale
-            # self.logical_ = new_scale
-
-        self.old_level_downsample = new_level_downsample
         self.set_visible_for_current_level()
 
     def resetTransform(self):
