@@ -105,8 +105,8 @@ class SlideViewer3(QWidget):
         if self.selected_rect_downsample:
             best_level = self.slide.get_best_level_for_downsample(self.selected_rect_downsample)
             best_level_downsample = self.slide_helper.get_downsample_for_level(best_level)
-            w = int(self.selected_rect_size[0] / best_level_downsample)
-            h = int(self.selected_rect_size[1] / best_level_downsample)
+            w = int(self.selected_rect_size_0[0] / best_level_downsample)
+            h = int(self.selected_rect_size_0[1] / best_level_downsample)
             x_0 = int(self.selected_rect_pos_0.x() + self.slide_helper.get_level_size_for_level(0)[0] / 2)
             y_0 = int(self.selected_rect_pos_0.y() + self.slide_helper.get_level_size_for_level(0)[1] / 2)
             selected_rect_pilimg = self.slide.read_region((x_0, y_0), best_level, (w, h))
@@ -118,23 +118,23 @@ class SlideViewer3(QWidget):
         if self.selected_rect_downsample:
             best_level = self.slide.get_best_level_for_downsample(self.selected_rect_downsample)
             best_level_downsample = self.slide_helper.get_downsample_for_level(best_level)
-            w = int(self.selected_rect_size[0] / best_level_downsample)
-            h = int(self.selected_rect_size[1] / best_level_downsample)
+            w = int(self.selected_rect_size_0[0] / best_level_downsample)
+            h = int(self.selected_rect_size_0[1] / best_level_downsample)
             x_0 = int(self.selected_rect_pos_0.x() + self.slide_helper.get_level_size_for_level(0)[0] / 2)
             y_0 = int(self.selected_rect_pos_0.y() + self.slide_helper.get_level_size_for_level(0)[1] / 2)
             selected_rect_pilimg = self.slide.read_region((x_0, y_0), best_level, (w, h))
             return (x_0, y_0, w, h, best_level_downsample)
 
     def setSlide(self, slide_path):
-        self.resetTransform()
         self.slide_path = slide_path
         self.slide = openslide.OpenSlide(slide_path)
         self.slide_helper = SlideHelper(self.slide)
         self.tiles_pyramid_models = []
         self.generate_tiles_for_level(0, (300, 300), False)
         self.generate_tiles_for_level(1, (300, 300), False)
-        self.generate_tiles_for_level(2, (500, 300), True)
+        self.generate_tiles_for_level(2, (500, 300), False)
 
+        self.reset_transform()
         slide_rect_size = self.slide_helper.get_rect_for_level(self.slide_helper.get_max_level()).size()
         ratio = 1.25
         zoom_width = self.view.viewport().width() / (ratio * slide_rect_size.width())
@@ -143,14 +143,10 @@ class SlideViewer3(QWidget):
         self.logical_zoom = 1 / self.slide_helper.get_downsample_for_level(self.slide_helper.get_max_level())
         self.level_relative_zoom = 1
         self.update_scale(QPoint(0, 0), zoom_)
-        print("view height",self.view.height())
-        print("rect height", slide_rect_size.height())
 
         self.selected_rect_downsample = 1
         self.selected_rect_pos_0 = QPoint(0, 0)
-        self.selected_rect_size = self.slide_helper.get_level_size_for_level(0)
-        # self.view.fitInView(self.scene.sceneRect())
-        print(self.view.mapToScene(self.view.rect()).boundingRect())
+        self.selected_rect_size_0 = self.slide_helper.get_level_size_for_level(0)
 
     def updateLabels(self, event):
         self.mouse_pos_view_label.setText("mouse_pos_view" + point_to_str(event.pos()))
@@ -201,36 +197,27 @@ class SlideViewer3(QWidget):
         return False
 
     def add_rect(self):
-        pos = self.rubber_band.pos() - self.view.pos()
-        pos_scene = self.view.mapToScene(pos)
-        rect = self.rubber_band.rect()
-        rect_scene = self.view.mapToScene(rect).boundingRect()
+        pos_scene = self.view.mapToScene(self.rubber_band.pos() - self.view.pos())
+        rect_scene = self.view.mapToScene(self.rubber_band.rect()).boundingRect()
         downsample = self.get_current_level_downsample()
         pos_0 = pos_scene * downsample
         rect_width_0 = rect_scene.width() * downsample
         rect_height_0 = rect_scene.height() * downsample
         self.selected_rect_pos_0 = pos_0
-        self.selected_rect_size = (rect_width_0, rect_height_0)
+        self.selected_rect_size_0 = (rect_width_0, rect_height_0)
         self.selected_rect_downsample = downsample
         for tiles_pyramid_model in self.tiles_pyramid_models:
             downsample = self.slide_helper.get_downsample_for_level(tiles_pyramid_model["level"])
             rect_real_sized = QRect(pos_0.x() / downsample, pos_0.y() / downsample, rect_width_0 / downsample,
                                     rect_height_0 / downsample)
-            item = SelectedRect(rect_real_sized, 1)
+            item = SelectedRect(rect_real_sized)
             tiles_pyramid_model["tiles_graphics_group"].removeFromGroup(tiles_pyramid_model["selected_graphics_rect"])
             tiles_pyramid_model["tiles_graphics_group"].addToGroup(item)
             tiles_pyramid_model["selected_graphics_rect"] = item
 
-        best_level = self.slide.get_best_level_for_downsample(self.selected_rect_downsample)
-        best_level_downsample = self.slide_helper.get_downsample_for_level(best_level)
-        w = int(self.selected_rect_size[0] / best_level_downsample)
-        h = int(self.selected_rect_size[1] / best_level_downsample)
         self.selected_rect_label.setText(
-            "selected_rect. pos: ({},{}), size: ({},{})".format(self.selected_rect_pos_0.x(),
-                                                                self.selected_rect_pos_0.y(), w, h))
-        self.view.invalidateScene()
-        self.update()
-        self.view.viewport().update()
+            "selected_rect. pos: ({0:.1f},{1:.1f}), size: ({2:.1f},{3:.1f})".format(pos_0.x(),
+                                                                pos_0.y(), rect_width_0, rect_height_0))
 
     def get_current_level(self):
         return self.slide.get_best_level_for_downsample(1 / self.logical_zoom)
@@ -279,35 +266,31 @@ class SlideViewer3(QWidget):
             level_scale_delta = 1 / (new_level_downsample / old_level_downsample)
             shift_scene = new_view_pos_scene
             shift_scene *= level_scale_delta
-            self.resetTransform()
+            self.reset_transform()
             self.update_scene_rect_for_current_level()
             scale_ = self.level_relative_zoom * new_level_downsample / old_level_downsample
             # scale_ comes from equation (size*zoom/downsample) == (new_size*new_zoom/new_downsample)
             self.view.scale(scale_, scale_)
             self.view.translate(-shift_scene.x(), -shift_scene.y())
-            # self.scene.addRect(
-            #     QRectF(self.view.mapToScene(mouse_pos), self.view.mapToScene(mouse_pos) + QPointF(50, 50)))
             self.level_relative_zoom = scale_
 
         self.update_items_visibility_for_current_level()
 
-    def resetTransform(self):
-        print("view_pos before resetTransform:", self.view_pos_scene_str())
-        print("dx before resetTransform:", self.view.transform().dx())
-        print("horizontalScrollBar before resetTransform:", self.view.horizontalScrollBar().value())
-        print("horizontalScrollBar singleStep before resetTransform:", self.view.horizontalScrollBar().singleStep())
+    def reset_transform(self):
+        # print("view_pos before resetTransform:", self.view_pos_scene_str())
+        # print("dx before resetTransform:", self.view.transform().dx())
+        # print("horizontalScrollBar before resetTransform:", self.view.horizontalScrollBar().value())
         self.view.resetTransform()
         self.view.horizontalScrollBar().setValue(0)
         self.view.verticalScrollBar().setValue(0)
-        print("view_pos after resetTransform:", self.view_pos_scene_str())
-        print("dx after resetTransform:", self.view.transform().dx())
-        print("horizontalScrollBar after resetTransform:", self.view.horizontalScrollBar().value())
+        # print("view_pos after resetTransform:", self.view_pos_scene_str())
+        # print("dx after resetTransform:", self.view.transform().dx())
+        # print("horizontalScrollBar after resetTransform:", self.view.horizontalScrollBar().value())
 
     def process_view_port_wheel_event(self, event: QWheelEvent):
         zoom_in = 1.15
         zoom_out = 1 / zoom_in
         zoom_ = zoom_in if event.angleDelta().y() > 0 else zoom_out
-        # print("wheelEvent", event.pos(), "->", self.mouse_wheel_pos_scene)
         self.update_scale(event.pos(), zoom_)
         self.updateLabels(event)
         event.accept()

@@ -9,10 +9,9 @@ import openslide
 
 
 class SelectedRect(QGraphicsItem):
-    def __init__(self, qrect: QRect, downsample):
+    def __init__(self, qrect: QRect):
         super().__init__()
-        self.qrect = QRect(qrect.x(), qrect.y(), qrect.width() * downsample, qrect.height() * downsample)
-        self.downsample = downsample
+        self.qrect = QRect(qrect.x(), qrect.y(), qrect.width(), qrect.height())
         self.setAcceptedMouseButtons(Qt.NoButton)
 
     def boundingRect(self):
