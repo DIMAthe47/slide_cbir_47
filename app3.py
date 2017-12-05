@@ -125,7 +125,7 @@ class SlideViewer3(QWidget):
             selected_rect_pilimg = self.slide.read_region((x_0, y_0), best_level, (w, h))
             return (x_0, y_0, w, h, best_level_downsample)
 
-    def setSlide(self, slide_path):
+    def load_slide(self, slide_path):
         self.slide_path = slide_path
         self.slide = openslide.OpenSlide(slide_path)
         self.slide_helper = SlideHelper(self.slide)
@@ -148,7 +148,7 @@ class SlideViewer3(QWidget):
         self.selected_rect_pos_0 = QPoint(0, 0)
         self.selected_rect_size_0 = self.slide_helper.get_level_size_for_level(0)
 
-    def updateLabels(self, event):
+    def update_labels(self, event):
         self.mouse_pos_view_label.setText("mouse_pos_view" + point_to_str(event.pos()))
         self.mouse_pos_scene_label.setText("mouse_pos_scene" + point_to_str(self.view.mapToScene(event.pos())))
         self.view_rect_view_label.setText("view_rect_view" + rect_to_str(self.view.rect()))
@@ -166,14 +166,14 @@ class SlideViewer3(QWidget):
             # print("eventFilter last_rect_scene", self.view.viewport().pos(), "->", self.last_rect_scene)
             # чтобы колёсико отвечало только за зум, а не за скроллинг
             self.process_view_port_wheel_event(event)
-            self.updateLabels(event)
+            self.update_labels(event)
             return True
         elif isinstance(event, QMouseEvent):
             if event.button() == Qt.RightButton:
                 if event.type() == QEvent.MouseButtonRelease:
                     # self.view.translate(500, 500)
                     print(self.view.mapToScene(self.view.rect().center()) - self.view.mapToScene(event.pos()))
-                    self.updateLabels(event)
+                    self.update_labels(event)
                     return True
             elif event.button() == Qt.LeftButton:
                 if event.type() == QEvent.MouseButtonPress:
@@ -185,10 +185,10 @@ class SlideViewer3(QWidget):
                     self.rubber_band.hide()
                     self.add_rect()
                     # self.view.translate(-500, -500)
-                    self.updateLabels(event)
+                    self.update_labels(event)
                     return True
             elif event.type() == QEvent.MouseMove:
-                self.updateLabels(event)
+                self.update_labels(event)
                 if not self.mouse_press_view.isNull():
                     self.rubber_band.setGeometry(QRect(self.mouse_press_view, event.pos()).normalized())
 
@@ -217,7 +217,8 @@ class SlideViewer3(QWidget):
 
         self.selected_rect_label.setText(
             "selected_rect. pos: ({0:.1f},{1:.1f}), size: ({2:.1f},{3:.1f})".format(pos_0.x(),
-                                                                pos_0.y(), rect_width_0, rect_height_0))
+                                                                                    pos_0.y(), rect_width_0,
+                                                                                    rect_height_0))
 
     def get_current_level(self):
         return self.slide.get_best_level_for_downsample(1 / self.logical_zoom)
@@ -236,9 +237,11 @@ class SlideViewer3(QWidget):
         level_downsample = self.slide.level_downsamples[best_level]
         for tile_pyramid_model in self.tiles_pyramid_models:
             if tile_pyramid_model["level"] == best_level:
+                # tile_pyramid_model["tiles_graphics_group"].setZValue(100)
                 tile_pyramid_model["tiles_graphics_group"].setVisible(True)
             else:
                 tile_pyramid_model["tiles_graphics_group"].setVisible(False)
+                # tile_pyramid_model["tiles_graphics_group"].setZValue(0)
         level_size = self.slide_helper.get_level_size_for_level(best_level)
         self.level_label.setText(
             "level: {} ({}, {}), level_downsample: {}".format(best_level, level_size[0], level_size[1],
@@ -292,7 +295,7 @@ class SlideViewer3(QWidget):
         zoom_out = 1 / zoom_in
         zoom_ = zoom_in if event.angleDelta().y() > 0 else zoom_out
         self.update_scale(event.pos(), zoom_)
-        self.updateLabels(event)
+        self.update_labels(event)
         event.accept()
 
     def view_pos_scene_str(self):
@@ -405,14 +408,15 @@ class SlieViewerMainWindow(QMainWindow):
         del self.slideViewer
         self.slideViewer = SlideViewer3()
         self.setCentralWidget(self.slideViewer)
-        self.slideViewer.setSlide(slide_path)
+        self.slideViewer.load_slide(slide_path)
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     win = SlieViewerMainWindow()
     # slide_path = '/home/dimathe47/Downloads/CMU-1-Small-Region.svs'
-    slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
+    # slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
+    slide_path = r'C:\Users\dmitriy\Downloads\JP2K-33003-1.svs'
     win.show()
-    win.slideViewer.setSlide(slide_path)
+    win.slideViewer.load_slide(slide_path)
     sys.exit(app.exec_())

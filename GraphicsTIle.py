@@ -32,8 +32,8 @@ class GraphicsTile(QGraphicsItem):
 
     def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem',
               widget: typing.Optional[QWidget] = ...):
-        # print("paint")
-        # print(self.cacheMode())
+        print("paint")
+        print(self.cacheMode())
         # painter.drawRect(self.rect)
         # painter.drawRect(0,0,100,100)
         x = int(self.x_y_w_h[0] * self.downsample)

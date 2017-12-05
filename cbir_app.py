@@ -80,7 +80,7 @@ class CbirMainWindow(QMainWindow):
         # self.ui.bottom_widget.list_view.setGridSize(QSize(150, 150))
 
         slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
-        self.ui.right_widget.setSlide(slide_path)
+        self.ui.right_widget.load_slide(slide_path)
 
     @pyqtSlot()
     def onShowQuery(self):
