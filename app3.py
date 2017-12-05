@@ -13,7 +13,7 @@ import openslide
 from PIL.ImageQt import ImageQt
 import time
 
-from GraphicsTIle import GraphicsTile
+from GraphicsTile import GraphicsTile
 from SelectedRect import SelectedRect
 
 
@@ -413,10 +413,12 @@ class SlieViewerMainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    QPixmapCache.setCacheLimit(300*10**3)
+    print("cache", QPixmapCache.cacheLimit())
     win = SlieViewerMainWindow()
     # slide_path = '/home/dimathe47/Downloads/CMU-1-Small-Region.svs'
-    # slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
-    slide_path = r'C:\Users\dmitriy\Downloads\JP2K-33003-1.svs'
+    slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
+    # slide_path = r'C:\Users\dmitriy\Downloads\JP2K-33003-1.svs'
     win.show()
     win.slideViewer.load_slide(slide_path)
     sys.exit(app.exec_())
