@@ -21,22 +21,15 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="TilesDescriptorWindow" name="left_widget" native="true">
-        <zorder>verticalLayoutWidget</zorder>
-       </widget>
+       <widget class="MediaObjectWidget" name="left_widget" native="true"/>
       </item>
       <item>
-       <widget class="SlideViewer3" name="right_widget" native="true">
-        <zorder>left_widget</zorder>
-        <zorder>verticalLayoutWidget</zorder>
-       </widget>
+       <widget class="SlideViewer" name="right_widget" native="true"/>
       </item>
      </layout>
     </item>
     <item>
-     <widget class="QWidget" name="bottom_widget" native="true">
-      <zorder>right_widget</zorder>
-     </widget>
+     <widget class="QWidget" name="bottom_widget" native="true"/>
     </item>
    </layout>
   </widget>
@@ -49,20 +42,80 @@
      <height>20</height>
     </rect>
    </property>
+   <widget class="QMenu" name="db_menu">
+    <property name="title">
+     <string>db</string>
+    </property>
+   </widget>
+   <widget class="SlideViewerMenu" name="query_menu">
+    <property name="title">
+     <string>query</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuActions">
+    <property name="title">
+     <string>actions</string>
+    </property>
+    <addaction name="actionSearch_2"/>
+    <addaction name="actionShow_query_tile_2"/>
+   </widget>
+   <addaction name="db_menu"/>
+   <addaction name="query_menu"/>
+   <addaction name="menuActions"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionLoad_slide">
+   <property name="text">
+    <string>load_slide</string>
+   </property>
+  </action>
+  <action name="db_action_load">
+   <property name="text">
+    <string>load</string>
+   </property>
+  </action>
+  <action name="actionSearch">
+   <property name="text">
+    <string>search</string>
+   </property>
+  </action>
+  <action name="actionShow_query_tile">
+   <property name="text">
+    <string>show query tile</string>
+   </property>
+  </action>
+  <action name="actionSearch_2">
+   <property name="text">
+    <string>search</string>
+   </property>
+  </action>
+  <action name="actionShow_query_tile_2">
+   <property name="text">
+    <string>show query tile</string>
+   </property>
+  </action>
+  <action name="query_load_action">
+   <property name="text">
+    <string>load</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
-   <class>SlideViewer3</class>
+   <class>SlideViewer</class>
    <extends>QWidget</extends>
-   <header>app3</header>
+   <header>slide_viewer</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>TilesDescriptorWindow</class>
+   <class>SlideViewerMenu</class>
+   <extends>QMenu</extends>
+   <header>slide_viewer_menu</header>
+  </customwidget>
+  <customwidget>
+   <class>MediaObjectWidget</class>
    <extends>QWidget</extends>
-   <header>tiles_descriptors_models_view</header>
+   <header>media_object</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

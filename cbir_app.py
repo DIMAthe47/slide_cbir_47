@@ -4,14 +4,29 @@ from PyQt5 import QtGui, QtWidgets
 from PIL import Image
 from PyQt5.QtCore import QSize, pyqtSlot, Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QAction, QInputDialog, QMessageBox
+from media_object import OnLoadMediaObjectsAction
+from slide_viewer_menu import SlideViewerMenu
+
 from cbir_main_window import Ui_MainWindow
-from tiles_descriptors_models_view import SimpleListView, ImageTextListModel
 
 sys.path.append(r"/home/dimathe47/PycharmProjects/cbir")
 import model_utils
 import json_utils
 from model_generators import *
 import computer_utils
+import openslide
+
+
+def build_items_for_tiles_descritpors_models(filepathes):
+    items = []
+    for filepath in filepathes:
+        tiles_descritpors_models = json_utils.read(filepath)
+        img_path = model_utils.find_image_path(tiles_descritpors_models[0])
+        pilimg = openslide.OpenSlide(img_path).get_thumbnail((100, 100))
+        item = {"pilimg": pilimg, "text": img_path,
+                "tiles_descriptors_models": tiles_descritpors_models}
+        items.append(item)
+    return items
 
 
 def generate_tile_descriptor_model(img_path, tile_rect, downsample, tiles_descriptor_model):
@@ -42,42 +57,16 @@ def generate_tile_descriptor_model(img_path, tile_rect, downsample, tiles_descri
 class CbirMainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(CbirMainWindow, self).__init__()
+        self.setWindowTitle("CBIR GUI")
+        self.setMinimumSize(1000, 700)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.setAcceptDrops(True)
+        self.ui.query_menu.set_slide_viewer(self.ui.right_widget)
 
-        self.setWindowTitle("CBIR GUI")
-        self.setMinimumSize(1000, 700)
-
-        showQueryTileAction = QAction("show query tile", self)
-        showQueryTileAction.triggered.connect(self.onShowQuery)
-
-        searchAction = QAction("search", self)
-        searchAction.triggered.connect(self.onSearchAction)
-
-        mainMenu = self.menuBar()
-        actionMenu = mainMenu.addMenu('&Actions')
-        actionMenu.addAction(searchAction)
-        actionMenu.addAction(showQueryTileAction)
-
-        # img_dir = '/home/dimathe47/data/geo_tiny/Segm_RemoteSensing1/cropped'
-        # import os
-        # img_names = os.listdir(img_dir)
-        # pilimg_text_list = [{"idx": i, "pilimg": Image.open(os.path.join(img_dir, img_name)), "text": img_name} for
-        #                     i, img_name in
-        #                     enumerate(img_names)]
-        # image_list_model = ImageTextListModel(pilimg_text_list)
-
-        # self.ui.left_widget.list_view.setModel(image_list_model)
-        self.ui.left_widget.list_view.setViewMode(QtWidgets.QListView.IconMode)
-        self.ui.left_widget.list_view.setGridSize(QSize(150, 150))
-        filepathes = ["/home/dimathe47/PycharmProjects/show_slide_2/array.json"]
-        self.ui.left_widget.updateItemsModel(filepathes)
-
-        # self.ui.bottom_widget.setModel(image_list_model)
-        # self.ui.bottom_widget.list_view.setViewMode(QtWidgets.QListView.IconMode)
-        # self.ui.bottom_widget.list_view.setGridSize(QSize(150, 150))
+        db_action_load = OnLoadMediaObjectsAction(self.ui.menubar, "load")
+        db_action_load.set_list_view(self.ui.left_widget.list_view)
+        self.ui.db_menu.addAction(db_action_load)
 
         slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
         self.ui.right_widget.load_slide(slide_path)
@@ -151,29 +140,19 @@ class CbirMainWindow(QMainWindow):
                                                QMessageBox.Ok)
             return
 
-        tile_rect_d=self.ui.right_widget.get_selected_rect()
-        slide_path=self.ui.right_widget.slide_path
+        tile_rect_d = self.ui.right_widget.get_selected_rect()
+        slide_path = self.ui.right_widget.slide_path
 
-        query_tile_descriptor_model = generate_tile_descriptor_model(slide_path, tile_rect_d[0:4],tile_rect_d[4], choosen_tiles_descriptors_model)
+        query_tile_descriptor_model = generate_tile_descriptor_model(slide_path, tile_rect_d[0:4], tile_rect_d[4],
+                                                                     choosen_tiles_descriptors_model)
         print(query_tile_descriptor_model)
         descriptor = computer_utils.compute_model(query_tile_descriptor_model)
         print(descriptor)
         dst_model = generate_distance_matrix_model(query_tile_descriptor_model, choosen_tiles_descriptors_model, "l2",
                                                    "dst.hdf5")
         nearest_indices_model = generate_nearest_indices_model(dst_model, -1, "nearest_indices.hdf5")
-        nearest_indices=computer_utils.compute_model(nearest_indices_model)[0]
+        nearest_indices = computer_utils.compute_model(nearest_indices_model)[0]
 
-
-
-        # if not query_images_filepathes:
-
-    #     return
-
-    # self.search_results = fake_search_results = [[query_image_filepath] * n_nearest for query_image_filepath in query_image_filepathes]
-    # self.search_results = self.retrieve_search_results(query_images_filepathes, n_nearest)
-
-
-    # self.updateSearchResultsView(self.search_results[0])
 
     def getChoice(self, choice_items):
         item, okPressed = QInputDialog.getItem(self, "Select tile and descriptor params", "", choice_items, 0, False)
@@ -184,10 +163,8 @@ class CbirMainWindow(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
-
     win = CbirMainWindow()
     win.show()
-
     sys.exit(app.exec_())
 
 
