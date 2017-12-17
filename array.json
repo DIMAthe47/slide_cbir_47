@@ -5,6 +5,7 @@
         "computer_func_name": "histogram",
         "computer_func_params": {
             "n_bins": 128,
+            "density": true,
             "library_func_kwargs": {}
         },
         "dtype": "float",
@@ -20,28 +21,34 @@
                 "dtype": "float",
                 "input_model": {
                     "type": "computer",
-                    "name": "tiling__tiles_rects_6_224_224_224_224__/home/dimathe47/Downloads/JP2K-33003-1.svs",
-                    "computer_func_name": "openslide_tiler2",
+                    "name": "tile__rects_15374_17497_500_500_500_500",
+                    "computer_func_name": "tile",
                     "computer_func_params": {
-                        "image_path": "/home/dimathe47/Downloads/JP2K-33003-1.svs",
-                        "downsample": 6,
+                        "image_model": {
+                            "type": "string",
+                            "name": "image_JP2K-33003-1.svs",
+                            "string": "/home/dimathe47/Downloads/JP2K-33003-1.svs"
+                        },
+                        "downsample": 1,
                         "library_func_kwargs": {}
                     },
                     "dtype": "int",
                     "input_model": {
                         "type": "computer",
-                        "name": "tiles_rects_6_224_224_224_224__/home/dimathe47/Downloads/JP2K-33003-1.svs",
-                        "computer_func_name": "tiles_rects",
+                        "name": "rects_15374_17497_500_500_500_500",
+                        "computer_func_name": "rect_tiles",
                         "computer_func_params": {
-                            "image_path": "/home/dimathe47/Downloads/JP2K-33003-1.svs",
-                            "downsample": 6,
-                            "tile_shape": [
-                                224,
-                                224
+                            "rect_size": [
+                                15374,
+                                17497
+                            ],
+                            "tile_size": [
+                                500,
+                                500
                             ],
                             "tile_step": [
-                                224,
-                                224
+                                500,
+                                500
                             ],
                             "library_func_kwargs": {}
                         },
@@ -66,76 +73,6 @@
             "type": "ds",
             "db_path": "/home/dimathe47/src/activations_knn/3/data/descriptors.hdf5",
             "ds_name": "histogram/histogram_128"
-        }
-    },
-    {
-        "type": "computer",
-        "name": "vgg16_fc1",
-        "computer_func_name": "vgg16",
-        "computer_func_params": {
-            "layer_name": "fc1",
-            "library_func_kwargs": {}
-        },
-        "dtype": "float",
-        "input_model": {
-            "type": "computer",
-            "name": "pilimage_to_matrix",
-            "computer_func_name": "pilimage_to_matrix",
-            "dtype": "float",
-            "input_model": {
-                "type": "computer",
-                "name": "rgbapilimage_to_rgbpilimage",
-                "computer_func_name": "rgbapilimage_to_rgbpilimage",
-                "dtype": "float",
-                "input_model": {
-                    "type": "computer",
-                    "name": "tiling__tiles_rects_6_224_224_224_224__/home/dimathe47/Downloads/JP2K-33003-1.svs",
-                    "computer_func_name": "openslide_tiler2",
-                    "computer_func_params": {
-                        "image_path": "/home/dimathe47/Downloads/JP2K-33003-1.svs",
-                        "downsample": 6,
-                        "library_func_kwargs": {}
-                    },
-                    "dtype": "int",
-                    "input_model": {
-                        "type": "computer",
-                        "name": "tiles_rects_6_224_224_224_224__/home/dimathe47/Downloads/JP2K-33003-1.svs",
-                        "computer_func_name": "tiles_rects",
-                        "computer_func_params": {
-                            "image_path": "/home/dimathe47/Downloads/JP2K-33003-1.svs",
-                            "downsample": 6,
-                            "tile_shape": [
-                                224,
-                                224
-                            ],
-                            "tile_step": [
-                                224,
-                                224
-                            ],
-                            "library_func_kwargs": {}
-                        },
-                        "dtype": "int",
-                        "output_model": {
-                            "type": "inmemory"
-                        }
-                    },
-                    "output_model": {
-                        "type": "inmemory"
-                    }
-                },
-                "output_model": {
-                    "type": "inmemory"
-                }
-            },
-            "output_model": {
-                "type": "inmemory"
-            }
-        },
-        "chunk_size": 1,
-        "output_model": {
-            "type": "ds",
-            "db_path": "/home/dimathe47/src/activations_knn/3/data/descriptors.hdf5",
-            "ds_name": "vgg16/vgg16_fc1"
         }
     }
 ]

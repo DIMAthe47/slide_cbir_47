@@ -29,7 +29,7 @@
      </layout>
     </item>
     <item>
-     <widget class="QWidget" name="bottom_widget" native="true"/>
+     <widget class="MediaObjectWidget" name="bottom_widget" native="true"/>
     </item>
    </layout>
   </widget>
@@ -52,16 +52,14 @@
      <string>query</string>
     </property>
    </widget>
-   <widget class="QMenu" name="menuActions">
+   <widget class="QMenu" name="menu_action">
     <property name="title">
      <string>actions</string>
     </property>
-    <addaction name="actionSearch_2"/>
-    <addaction name="actionShow_query_tile_2"/>
    </widget>
    <addaction name="db_menu"/>
    <addaction name="query_menu"/>
-   <addaction name="menuActions"/>
+   <addaction name="menu_action"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionLoad_slide">
@@ -84,12 +82,12 @@
     <string>show query tile</string>
    </property>
   </action>
-  <action name="actionSearch_2">
+  <action name="action_search">
    <property name="text">
     <string>search</string>
    </property>
   </action>
-  <action name="actionShow_query_tile_2">
+  <action name="action_show_query_tile">
    <property name="text">
     <string>show query tile</string>
    </property>
