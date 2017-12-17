@@ -1,4 +1,6 @@
 import sys
+
+import rect_utils
 from PyQt5 import QtGui, QtWidgets
 
 from PIL import Image
@@ -41,6 +43,32 @@ def filepath_to_media_object(filepath):
     img_path = find_image_path(tiles_descritpors_models[0])
     pilimg = openslide.OpenSlide(img_path).get_thumbnail((100, 100))
     media_object = MediaObject(filepath, pilimg, tiles_descritpors_models)
+    return media_object
+
+
+def build_media_object_with_intensities_tiles(distances, tiles_descriptor_model, icon_size):
+    print(distances)
+    normalized_distances = distances / np.max(distances)
+    alphas = [128 - 128 * dist for dist in normalized_distances]
+    qcolors = [QColor(0, 255, 0, int(alpha)) for alpha in alphas]
+    rect_tiles_model = model_utils.find_rect_tiles_model(tiles_descriptor_model)
+    rect_tiles = list(computer_utils.compute_model(rect_tiles_model))
+    # tile_model =  model_utils.find_tile_model(chosen_tiles_descriptors_model)
+    img_path = find_image_path(tiles_descriptor_model)
+    slide = openslide.OpenSlide(img_path)
+    thumbnail_size = icon_size
+    thumbnail = slide.get_thumbnail(thumbnail_size)
+    thumbnail_size = thumbnail.size
+    downsample = find_downsample(tiles_descriptor_model)
+    slide_size_0 = slide.level_dimensions[slide.get_best_level_for_downsample(downsample)]
+    slide_size = (slide_size_0[0] / downsample, slide_size_0[1] / downsample)
+    thumbnail_scale = (slide_size[0] / thumbnail_size[0], slide_size[1] / thumbnail_size[1])
+    slide_tile_size = (rect_tiles[0][2], rect_tiles[0][3])
+    columns, rows = rect_utils.get_n_columns_n_rows_for_tile_size(slide_size_0, slide_tile_size)
+    thumbnail_rects = rect_utils.gen_slice_rect_n(thumbnail_size, columns, rows)
+
+    media_object = MediaObject(img_path, PixmapWithMaskedTiles(thumbnail, thumbnail_rects, qcolors),
+                               tiles_descriptor_model)
     return media_object
 
 
@@ -192,35 +220,8 @@ class CbirMainWindow(QMainWindow):
 
         distances = computer_utils.compute_model(distance_model, force=True)
         distances = np.array(distances).squeeze()
-        # distances = computer_utils.read_input_model(distance_model["output_model"])[0]
-        print(distances)
-
-        normalized_distances = distances / np.max(distances)
-        alphas = [128 - 128 * dist for dist in normalized_distances]
-        qcolors = [QColor(0, 255, 0, int(alpha)) for alpha in alphas]
-        rect_tiles_model = model_utils.find_rect_tiles_model(chosen_tiles_descriptors_model)
-        rect_tiles = list(computer_utils.compute_model(rect_tiles_model))
-        # tile_model =  model_utils.find_tile_model(chosen_tiles_descriptors_model)
-        img_path = find_image_path(chosen_tiles_descriptors_model)
-        slide = openslide.OpenSlide(img_path)
-        thumbnail_size = self.ui.bottom_widget.list_view.icon_size
-        thumbnail = slide.get_thumbnail(thumbnail_size)
-        thumbnail_size = thumbnail.size
-        downsample = find_downsample(chosen_tiles_descriptors_model)
-        slide_size_0 = slide.level_dimensions[slide.get_best_level_for_downsample(downsample)]
-        slide_size = (slide_size_0[0] / downsample, slide_size_0[1] / downsample)
-        thumbnail_scale = (slide_size[0] / thumbnail_size[0], slide_size[1] / thumbnail_size[1])
-
-        # for slide_rect in rect_tiles:
-        #     rect_as_arr=np.array(slide_rect)
-        #     rect_as_arr[]/=
-        thumbnail_rects = [(slide_rect[0] / thumbnail_scale[0], slide_rect[1] / thumbnail_scale[1],
-                            slide_rect[2] / thumbnail_scale[0], slide_rect[3] / thumbnail_scale[1]) for
-                           slide_rect in
-                           rect_tiles]
-
-        media_object = MediaObject(img_path, PixmapWithMaskedTiles(thumbnail, thumbnail_rects, qcolors),
-                                   chosen_tiles_descriptors_model)
+        media_object = build_media_object_with_intensities_tiles(distances, chosen_tiles_descriptors_model,
+                                                                 self.ui.bottom_widget.list_view.icon_size)
         self.ui.bottom_widget.list_view.update_media_objects([media_object])
 
         # nearest_indices_model = generate_nearest_indices_model(distance_model, -1, "computed/nearest_indices.hdf5")
