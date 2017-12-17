@@ -80,6 +80,7 @@ class Ui_MainWindow(object):
         self.action_show_query_tile.setText(_translate("MainWindow", "show query tile"))
         self.query_load_action.setText(_translate("MainWindow", "load"))
 
-from media_object import MediaObjectWidget
+
+from media_object_widget import MediaObjectWidget
 from slide_viewer import SlideViewer
 from slide_viewer_menu import SlideViewerMenu
