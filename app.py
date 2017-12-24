@@ -1,7 +1,7 @@
 import sys
 
 import rect_utils
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 import os
 from PyQt5.QtCore import pyqtSlot, QRectF
@@ -12,7 +12,8 @@ from tiled_pixmap import TiledPixmap
 from media_object_action import OnLoadMediaObjectsAction, OnGetSelectedMediaObjectsDataAction
 import numpy as np
 
-from cbir_main_window import Ui_MainWindow
+from CreateModelsDialog import CreateModelsDialog
+from designer.cbir_main_window import Ui_MainWindow
 
 sys.path.append(r"/home/dimathe47/PycharmProjects/cbir")
 import model_utils
@@ -22,6 +23,12 @@ import computer_utils
 import openslide
 
 start_selection_rect = QRectF(0, 0, 500, 500)
+start_slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
+start_filepathes_to_models = ["/home/dimathe47/PycharmProjects/slide_cbir_47/models/array0.json",
+                              "/home/dimathe47/PycharmProjects/slide_cbir_47/models/array1.json"]
+
+
+# start_slide_path = '/home/dimathe47/Downloads/CMU-1-Small-Region.svs'
 
 
 def qrectf_to_rect(qrectf: QRectF):
@@ -48,11 +55,11 @@ def build_media_object_text(tiles_descriptors_model):
     return media_object_text
 
 
-def filepath_to_media_object(filepath):
+def filepath_to_media_object(filepath, thumbnail_size=(500, 500)):
     tiles_descritpors_models = json_utils.read(filepath)
     img_path = find_image_path(tiles_descritpors_models[0])
     media_object_text = build_media_object_text(tiles_descritpors_models[0])
-    pilimg = openslide.OpenSlide(img_path).get_thumbnail((100, 100))
+    pilimg = openslide.OpenSlide(img_path).get_thumbnail(thumbnail_size)
     media_object = MediaObject(media_object_text, pilimg, tiles_descritpors_models)
     return media_object
 
@@ -147,6 +154,9 @@ class CbirMainWindow(QMainWindow):
         db_action_load.set_media_object_extractor(filepath_to_media_object)
         self.ui.db_menu.addAction(db_action_load)
 
+        db_action_create = self.ui.db_menu.addAction("create")
+        db_action_create.triggered.connect(self.on_create_models)
+
     def setup_action_menu(self):
         action_search = OnGetSelectedMediaObjectsDataAction(self.ui.menubar, "search")
         action_search.set_list_view(self.base_media_objects_widget.list_view)
@@ -156,17 +166,13 @@ class CbirMainWindow(QMainWindow):
     def setup_base_media_objects_widget(self):
         self.base_media_objects_widget = self.ui.left_widget
         self.base_media_objects_widget.list_view.setViewMode(QtWidgets.QListView.ListMode)
-        media_objects = [filepath_to_media_object(source) for source in
-                         ["/home/dimathe47/PycharmProjects/slide_cbir_47/array0.json",
-                          "/home/dimathe47/PycharmProjects/slide_cbir_47/array1.json"]]
+        media_objects = [filepath_to_media_object(source) for source in start_filepathes_to_models]
         self.base_media_objects_widget.list_model.update_media_objects(media_objects)
         self.base_media_objects_widget.list_view.selectAll()
 
     def setup_query_viewer(self):
         self.query_viewer = self.ui.right_widget
-        slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
-        # slide_path = '/home/dimathe47/Downloads/CMU-1-Small-Region.svs'
-        self.query_viewer.load_slide(slide_path)
+        self.query_viewer.load_slide(start_slide_path)
         self.query_viewer.selected_qrectf_level_downsample = 1
         self.query_viewer.selected_qrectf_0_level = start_selection_rect
         self.query_viewer.update_selected_rect_view()
@@ -178,24 +184,49 @@ class CbirMainWindow(QMainWindow):
         self.result_media_objects_widget.list_view.update_icon_max_size_or_ratio((200, 0.5))
 
     def on_search_action(self, media_objects_data):
+        selected_query_qrectf = self.query_viewer.selected_qrectf_0_level
+        if not selected_query_qrectf:
+            QMessageBox.question(self, 'Error', "No query rect selected", QMessageBox.Ok)
+            return
+
         print(media_objects_data)
-        n_nearest = 10
         selected_tiles_descriptors_models_arr = media_objects_data
         tiles_descriptors_models = [tiles_descriptor_model for tiles_descriptors_models in
                                     selected_tiles_descriptors_models_arr for tiles_descriptor_model in
                                     tiles_descriptors_models]
 
         if not tiles_descriptors_models or len(tiles_descriptors_models) == 0:
-            buttonReply = QMessageBox.question(self, 'Error', "No models selected",
-                                               QMessageBox.Ok)
+            QMessageBox.question(self, 'Error', "No models selected", QMessageBox.Ok)
             return
 
-        selected_query_qrectf = self.get_selected_query_qrectf()
-        if not selected_query_qrectf:
-            buttonReply = QMessageBox.question(self, 'Error', "No query rect selected",
-                                               QMessageBox.Ok)
+        n_selected_images = len(selected_tiles_descriptors_models_arr)
+        chosen_tiles_descriptors_models = self.choose_tile_descriptors_model(tiles_descriptors_models,
+                                                                             n_selected_images)
+        if not chosen_tiles_descriptors_models:
+            QMessageBox.question(self, 'Error', "No descriptor model selected", QMessageBox.Ok)
             return
 
+        selected_query_rect = qrectf_to_rect(selected_query_qrectf)
+        query_tile_descriptor_model = build_query_tile_descriptor_model(self.query_viewer.slide_path,
+                                                                        selected_query_rect,
+                                                                        self.query_viewer.selected_qrectf_level_downsample,
+                                                                        chosen_tiles_descriptors_models[0])
+        print(query_tile_descriptor_model)
+        media_objects = []
+        for chosen_tiles_descriptors_model in chosen_tiles_descriptors_models:
+            distance_model = generate_distance_matrix_model(query_tile_descriptor_model, chosen_tiles_descriptors_model)
+            distances = computer_utils.compute_model(distance_model, force=True)
+            distances = np.array(distances).squeeze()
+            media_object = build_media_object_with_intensities_tiles(distances, chosen_tiles_descriptors_model,
+                                                                     self.result_media_objects_widget.list_view.icon_size)
+            media_objects.append(media_object)
+        self.result_media_objects_widget.list_model.update_media_objects(media_objects)
+
+        # nearest_indices_model = generate_nearest_indices_model(distance_model, -1, "computed/nearest_indices.hdf5")
+        # nearest_indices = computer_utils.compute_model(nearest_indices_model)[0]
+        # print(nearest_indices)
+
+    def choose_tile_descriptors_model(self, tiles_descriptors_models, n_selected_images):
         str__model = {}
         for tiles_descriptor_model in tiles_descriptors_models:
             str_ = tiles_descriptors_model_to_str(tiles_descriptor_model)
@@ -203,52 +234,11 @@ class CbirMainWindow(QMainWindow):
             models.append(tiles_descriptor_model)
             str__model[str_] = models
 
-        n_selected_images = len(selected_tiles_descriptors_models_arr)
         available_models_for_selected_images_strs = [str_ for str_ in str__model if
                                                      len(str__model[str_]) == n_selected_images]
         chosen_str = self.get_chosen_str(available_models_for_selected_images_strs)
-
-        if not chosen_str:
-            buttonReply = QMessageBox.question(self, 'Error', "No descriptor model selected",
-                                               QMessageBox.Ok)
-            return
-
         chosen_tiles_descriptors_models = str__model[chosen_str]
-
-        selected_query_rect = qrectf_to_rect(selected_query_qrectf)
-        query_tile_descriptor_model = build_query_tile_descriptor_model(self.get_query_slide_path(),
-                                                                        selected_query_rect,
-                                                                        self.get_selected_query_level_downsample(),
-                                                                        chosen_tiles_descriptors_models[0])
-        print(query_tile_descriptor_model)
-        descriptor = computer_utils.compute_model(query_tile_descriptor_model)
-        print(list(descriptor))
-        # distance_model = generate_distance_matrix_model(query_tile_descriptor_model, chosen_tiles_descriptors_model,
-        #                                                 "l2", "computed/dst.hdf5")
-        # db_descriptors = computer_utils.compute_model(chosen_tiles_descriptors_model, force=False)
-
-        media_objects = []
-        for chosen_tiles_descriptors_model in chosen_tiles_descriptors_models:
-            distance_model = generate_distance_matrix_model(query_tile_descriptor_model, chosen_tiles_descriptors_model)
-            distances = computer_utils.compute_model(distance_model, force=True)
-            distances = np.array(distances).squeeze()
-            media_object = build_media_object_with_intensities_tiles(distances, chosen_tiles_descriptors_model,
-                                                                     self.ui.bottom_widget.list_view.icon_size)
-            media_objects.append(media_object)
-        self.ui.bottom_widget.list_model.update_media_objects(media_objects)
-
-        # nearest_indices_model = generate_nearest_indices_model(distance_model, -1, "computed/nearest_indices.hdf5")
-        # nearest_indices = computer_utils.compute_model(nearest_indices_model)[0]
-        # print(nearest_indices)
-
-    def get_query_slide_path(self):
-        return self.ui.right_widget.slide_path
-
-    def get_selected_query_qrectf(self):
-        return self.ui.right_widget.selected_qrectf_0_level
-
-    def get_selected_query_level_downsample(self):
-        return self.ui.right_widget.selected_qrectf_level_downsample
+        return chosen_tiles_descriptors_models
 
     def get_chosen_str(self, choice_items):
         chosen_item, okPressed = QInputDialog.getItem(self, "Select tile and descriptor params", "", choice_items, 0,
@@ -257,6 +247,10 @@ class CbirMainWindow(QMainWindow):
             return
         print(chosen_item)
         return chosen_item
+
+    def on_create_models(self):
+        CreateModelsDialog(self).show()
+        print("on_create_models")
 
 
 def main():
