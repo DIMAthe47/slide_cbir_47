@@ -1,12 +1,13 @@
 import sys
 
-import rect_utils
 from PyQt5 import QtWidgets, QtCore
 
 import os
 from PyQt5.QtCore import pyqtSlot, QRectF
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QApplication, QMainWindow, QInputDialog, QMessageBox, QAbstractItemView
+
+from cbir_core.computer import model_utils, computer_utils
 from media_object import MediaObject
 from tiled_pixmap import TiledPixmap
 from media_object_action import OnLoadMediaObjectsAction, OnGetSelectedMediaObjectsDataAction
@@ -15,18 +16,18 @@ import numpy as np
 from CreateModelsDialog import CreateModelsDialog
 from designer.cbir_main_window import Ui_MainWindow
 
-sys.path.append(r"/home/dimathe47/PycharmProjects/cbir")
-import model_utils
 import json_utils
 from model_generators import *
-import computer_utils
 import openslide
 
-start_selection_rect = QRectF(0, 0, 500, 500)
-start_slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
-start_filepathes_to_models = ["/home/dimathe47/PycharmProjects/slide_cbir_47/models/array0.json",
-                              "/home/dimathe47/PycharmProjects/slide_cbir_47/models/array1.json"]
+from tiling_utils import get_n_columns_n_rows_for_tile_size, gen_slice_rect_n
 
+start_selection_rect = QRectF(0, 0, 500, 500)
+# start_slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
+start_slide_path = r'C:\Users\DIMA\Downloads\JP2K-33003-1.svs'
+
+# start_filepathes_to_models = ["/home/dimathe47/PycharmProjects/slide_cbir_47/models/array0.json",
+#                               "/home/dimathe47/PycharmProjects/slide_cbir_47/models/array1.json"]
 
 # start_slide_path = '/home/dimathe47/Downloads/CMU-1-Small-Region.svs'
 
@@ -93,8 +94,8 @@ def build_media_object_with_intensities_tiles(distances, tiles_descriptor_model,
     slide_size = (slide_size_0[0] / downsample, slide_size_0[1] / downsample)
     thumbnail_scale = (slide_size[0] / thumbnail_size[0], slide_size[1] / thumbnail_size[1])
     slide_tile_size = (rect_tiles[0][2], rect_tiles[0][3])
-    columns, rows = rect_utils.get_n_columns_n_rows_for_tile_size(slide_size_0, slide_tile_size)
-    thumbnail_rects = rect_utils.gen_slice_rect_n(thumbnail_size, columns, rows)
+    columns, rows = get_n_columns_n_rows_for_tile_size(slide_size_0, slide_tile_size)
+    thumbnail_rects = gen_slice_rect_n(thumbnail_size, columns, rows)
 
     media_object_text = build_media_object_text(tiles_descriptor_model)
     media_object = MediaObject(media_object_text, TiledPixmap(thumbnail, thumbnail_rects, qcolors),
@@ -166,9 +167,9 @@ class CbirMainWindow(QMainWindow):
     def setup_base_media_objects_widget(self):
         self.base_media_objects_widget = self.ui.left_widget
         self.base_media_objects_widget.list_view.setViewMode(QtWidgets.QListView.ListMode)
-        media_objects = [filepath_to_media_object(source) for source in start_filepathes_to_models]
-        self.base_media_objects_widget.list_model.update_media_objects(media_objects)
-        self.base_media_objects_widget.list_view.selectAll()
+        # media_objects = [filepath_to_media_object(source) for source in start_filepathes_to_models]
+        # self.base_media_objects_widget.list_model.update_media_objects(media_objects)
+        # self.base_media_objects_widget.list_view.selectAll()
 
     def setup_query_viewer(self):
         self.query_viewer = self.ui.right_widget
