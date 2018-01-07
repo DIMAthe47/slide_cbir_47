@@ -1,3 +1,4 @@
+import json_utils
 from cbir_core.computer.computer_utils import compute_model
 from model_generators import generate_image_model, generate_rect_tiles_model, generate_tiling_model, \
     generate_histogram_model, generate_rgbapilimage_to_rgbpilimage_model, generate_pilimage_to_matrix_model
@@ -17,6 +18,9 @@ def main():
 
     histogram_model = generate_histogram_model(tiling_model, 128, True, "temp/computed/descriptors.hdf5")
     compute_model(histogram_model)
+
+    db_models = [histogram_model]
+    json_utils.write("temp/db_models/histogram_models.json", db_models)
 
 
 if __name__ == '__main__':

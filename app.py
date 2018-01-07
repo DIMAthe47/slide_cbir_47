@@ -26,6 +26,7 @@ start_selection_rect = QRectF(0, 0, 500, 500)
 # start_slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
 start_slide_path = r'C:\Users\DIMA\Downloads\JP2K-33003-1.svs'
 
+
 # start_filepathes_to_models = ["/home/dimathe47/PycharmProjects/slide_cbir_47/models/array0.json",
 #                               "/home/dimathe47/PycharmProjects/slide_cbir_47/models/array1.json"]
 
@@ -37,13 +38,14 @@ def qrectf_to_rect(qrectf: QRectF):
 
 
 def find_image_path(model):
-    img_path = model_utils.find_tile_model(model)["computer_func_params"]["image_model"]["string"]
+    img_path = model_utils.find_image_model(model)["string"]
     return img_path
 
 
 def find_downsample(model):
-    img_path = model_utils.find_tile_model(model)["computer_func_params"]["downsample"]
-    return img_path
+    openslide_tiler_model = model_utils.find_openslide_tiler_model(model)
+    downsample = openslide_tiler_model["computer_func_params"]["downsample"]
+    return downsample
 
 
 def build_media_object_text(tiles_descriptors_model):
@@ -68,8 +70,7 @@ def filepath_to_media_object(filepath, thumbnail_size=(500, 500)):
 def tiles_descriptors_model_to_str(tiles_descriptors_model):
     rect_tiles_model = model_utils.find_rect_tiles_model(tiles_descriptors_model)
     rect_tiles_size = rect_tiles_model["computer_func_params"]["tile_size"]
-    tile_model = model_utils.find_tile_model(tiles_descriptors_model)
-    downsample = tile_model["computer_func_params"]["downsample"]
+    downsample =find_downsample(tiles_descriptors_model)
     descriptor_type = tiles_descriptors_model["name"]
     str_ = "descriptor_type: {}, rect: ({},{}), downsample: {}".format(descriptor_type,
                                                                        *rect_tiles_size, downsample)
@@ -83,7 +84,7 @@ def build_media_object_with_intensities_tiles(distances, tiles_descriptor_model,
     qcolors = [QColor(0, 255, 0, int(alpha)) for alpha in alphas]
     rect_tiles_model = model_utils.find_rect_tiles_model(tiles_descriptor_model)
     rect_tiles = list(computer_utils.compute_model(rect_tiles_model))
-    # tile_model =  model_utils.find_tile_model(chosen_tiles_descriptors_model)
+    # tile_model =  model_utils.find_tile_rects_model(chosen_tiles_descriptors_model)
     img_path = find_image_path(tiles_descriptor_model)
     slide = openslide.OpenSlide(img_path)
     thumbnail_size = icon_size
