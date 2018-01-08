@@ -31,8 +31,8 @@ start_slide_path = r'C:\Users\DIMA\Downloads\JP2K-33003-1.svs'
 #                               "/home/dimathe47/PycharmProjects/slide_cbir_47/models/array1.json"]
 
 start_filepathes_to_models = [
-    "temp/db_models/histogram_models1.json",
-    "temp/db_models/histogram_models2.json"
+    "temp/db_models/JP2K-33003-1.json",
+    "temp/db_models/JP2K-33003-1-copy.json",
 ]
 
 
@@ -53,7 +53,7 @@ def build_media_object_text(tiles_descriptors_model):
     return media_object_text
 
 
-def filepath_to_media_object(filepath, thumbnail_size=(500, 500)):
+def filepath_to_media_object(filepath):
     tiles_descritpors_models = json_utils.read(filepath)
     img_path = find_image_path(tiles_descritpors_models[0])
     media_object_text = build_media_object_text(tiles_descritpors_models[0])
