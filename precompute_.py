@@ -20,7 +20,8 @@ def main():
     compute_model(histogram_model)
 
     db_models = [histogram_model]
-    json_utils.write("temp/db_models/histogram_models.json", db_models)
+    json_utils.write("temp/db_models/histogram_models1.json", db_models)
+    json_utils.write("temp/db_models/histogram_models2.json", db_models)
 
 
 if __name__ == '__main__':

@@ -1,13 +1,14 @@
 import sys
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
 import os
-from PyQt5.QtCore import pyqtSlot, QRectF
-from PyQt5.QtGui import QColor
+from PyQt5.QtCore import QRectF
+from PyQt5.QtGui import QColor, QPixmapCache
 from PyQt5.QtWidgets import QApplication, QMainWindow, QInputDialog, QMessageBox, QAbstractItemView
 
 from cbir_core.computer import model_utils, computer_utils
+from cbir_core.computer.model_utils import find_image_path, find_downsample
 from media_object import MediaObject
 from tiled_pixmap import TiledPixmap
 from media_object_action import OnLoadMediaObjectsAction, OnGetSelectedMediaObjectsDataAction
@@ -26,26 +27,20 @@ start_selection_rect = QRectF(0, 0, 500, 500)
 # start_slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
 start_slide_path = r'C:\Users\DIMA\Downloads\JP2K-33003-1.svs'
 
-
 # start_filepathes_to_models = ["/home/dimathe47/PycharmProjects/slide_cbir_47/models/array0.json",
 #                               "/home/dimathe47/PycharmProjects/slide_cbir_47/models/array1.json"]
+
+start_filepathes_to_models = [
+    "temp/db_models/histogram_models1.json",
+    "temp/db_models/histogram_models2.json"
+]
+
 
 # start_slide_path = '/home/dimathe47/Downloads/CMU-1-Small-Region.svs'
 
 
 def qrectf_to_rect(qrectf: QRectF):
     return (int(qrectf.x()), int(qrectf.y()), int(qrectf.width()), int(qrectf.height()))
-
-
-def find_image_path(model):
-    img_path = model_utils.find_image_model(model)["string"]
-    return img_path
-
-
-def find_downsample(model):
-    openslide_tiler_model = model_utils.find_openslide_tiler_model(model)
-    downsample = openslide_tiler_model["computer_func_params"]["downsample"]
-    return downsample
 
 
 def build_media_object_text(tiles_descriptors_model):
@@ -62,15 +57,20 @@ def filepath_to_media_object(filepath, thumbnail_size=(500, 500)):
     tiles_descritpors_models = json_utils.read(filepath)
     img_path = find_image_path(tiles_descritpors_models[0])
     media_object_text = build_media_object_text(tiles_descritpors_models[0])
-    pilimg = openslide.OpenSlide(img_path).get_thumbnail(thumbnail_size)
-    media_object = MediaObject(media_object_text, pilimg, tiles_descritpors_models)
+
+    # pilimg = openslide.OpenSlide(img_path).get_thumbnail(thumbnail_size)
+    def thumbnail_func(thumbnail_size):
+        pilimg = openslide.OpenSlide(img_path).get_thumbnail(thumbnail_size)
+        return pilimg
+
+    media_object = MediaObject(media_object_text, thumbnail_func, tiles_descritpors_models)
     return media_object
 
 
 def tiles_descriptors_model_to_str(tiles_descriptors_model):
     rect_tiles_model = model_utils.find_rect_tiles_model(tiles_descriptors_model)
     rect_tiles_size = rect_tiles_model["computer_func_params"]["tile_size"]
-    downsample =find_downsample(tiles_descriptors_model)
+    downsample = find_downsample(tiles_descriptors_model)
     descriptor_type = tiles_descriptors_model["name"]
     str_ = "descriptor_type: {}, rect: ({},{}), downsample: {}".format(descriptor_type,
                                                                        *rect_tiles_size, downsample)
@@ -168,9 +168,9 @@ class CbirMainWindow(QMainWindow):
     def setup_base_media_objects_widget(self):
         self.base_media_objects_widget = self.ui.left_widget
         self.base_media_objects_widget.list_view.setViewMode(QtWidgets.QListView.ListMode)
-        # media_objects = [filepath_to_media_object(source) for source in start_filepathes_to_models]
-        # self.base_media_objects_widget.list_model.update_media_objects(media_objects)
-        # self.base_media_objects_widget.list_view.selectAll()
+        media_objects = [filepath_to_media_object(source) for source in start_filepathes_to_models]
+        self.base_media_objects_widget.list_model.update_media_objects(media_objects)
+        self.base_media_objects_widget.list_view.selectAll()
 
     def setup_query_viewer(self):
         self.query_viewer = self.ui.right_widget
@@ -191,7 +191,7 @@ class CbirMainWindow(QMainWindow):
             QMessageBox.question(self, 'Error', "No query rect selected", QMessageBox.Ok)
             return
 
-        print(media_objects_data)
+        # print(media_objects_data)
         selected_tiles_descriptors_models_arr = media_objects_data
         tiles_descriptors_models = [tiles_descriptor_model for tiles_descriptors_models in
                                     selected_tiles_descriptors_models_arr for tiles_descriptor_model in
@@ -257,6 +257,9 @@ class CbirMainWindow(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
+    cache_size_in_kb = 300 * 10 ** 3
+    QPixmapCache.setCacheLimit(cache_size_in_kb)
+    QPixmapCache.clear()
     win = CbirMainWindow()
     win.show()
     # win.init_view_after_show()
