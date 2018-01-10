@@ -14,7 +14,7 @@ def main():
     slide = openslide.OpenSlide(slide_path)
     slide_size = slide.level_dimensions[0]
     image_model = generate_image_model(slide_path)
-    tile_size = (300, 300)
+    tile_size = (224, 224)
     rect_tiles_model = generate_rect_tiles_model(slide_size, tile_size, tile_size)
     tiling_model = generate_tiling_model(rect_tiles_model, image_model, 1)
     tiling_model = generate_rgbapilimage_to_rgbpilimage_model(tiling_model)
@@ -36,7 +36,13 @@ def main():
                 "density": True,
                 "dtype": "int"
             },
-        }
+        },
+        {
+            "name": "vgg16",
+            "params": {
+                "layer_name": "fc1",
+            },
+        },
     ]
 
     img_name = os.path.splitext(os.path.basename(slide_path))[0]
