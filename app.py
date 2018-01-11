@@ -9,6 +9,9 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QInputDialog, QMessageBox
 
 from cbir_core.computer import model_utils, computer_utils
 from cbir_core.computer.model_utils import find_image_path, find_downsample
+from config_constants import start_query_slide_path, start_db_filepathes_to_models, start_selection_rect, \
+    main_window_minimum_size, result_media_objects_icon_max_size_or_ratio, cache_size_in_kb, \
+    base_media_objects_icon_max_size_or_ratio
 from media_object import MediaObject
 from tiled_pixmap import TiledPixmap
 from media_object_action import OnLoadMediaObjectsAction, OnGetSelectedMediaObjectsDataAction
@@ -22,22 +25,6 @@ from model_generators import *
 import openslide
 
 from tiling_utils import get_n_columns_n_rows_for_tile_size, gen_slice_rect_n
-
-start_selection_rect = QRectF(0, 0, 500, 500)
-# start_slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
-start_slide_path = r'C:\Users\DIMA\Downloads\JP2K-33003-1.svs'
-
-# start_filepathes_to_models = ["/home/dimathe47/PycharmProjects/slide_cbir_47/models/array0.json",
-#                               "/home/dimathe47/PycharmProjects/slide_cbir_47/models/array1.json"]
-
-start_filepathes_to_models = [
-    "temp/db_models/JP2K-33003-1.json",
-    "temp/db_models/CMU-1-Small-Region.json",
-    # "temp/db_models/JP2K-33003-1-copy.json",
-]
-
-
-# start_slide_path = '/home/dimathe47/Downloads/CMU-1-Small-Region.svs'
 
 
 def qrectf_to_rect(qrectf: QRectF):
@@ -139,7 +126,7 @@ class CbirMainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(CbirMainWindow, self).__init__()
         self.setWindowTitle("CBIR GUI")
-        self.setMinimumSize(1300, 800)
+        self.setMinimumSize(*main_window_minimum_size)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setup_base_media_objects_widget()
@@ -171,12 +158,14 @@ class CbirMainWindow(QMainWindow):
     def setup_base_media_objects_widget(self):
         self.base_media_objects_widget = self.ui.left_widget
         self.base_media_objects_widget.list_view.setViewMode(QtWidgets.QListView.ListMode)
-        media_objects = [filepath_to_media_object(source) for source in start_filepathes_to_models]
+        media_objects = [filepath_to_media_object(source) for source in start_db_filepathes_to_models]
         self.base_media_objects_widget.list_model.update_media_objects(media_objects)
+        self.base_media_objects_widget.list_view.update_icon_max_size_or_ratio(
+            base_media_objects_icon_max_size_or_ratio)
 
     def setup_query_viewer(self):
         self.query_viewer = self.ui.right_widget
-        self.query_viewer.load_slide(start_slide_path)
+        self.query_viewer.load_slide(start_query_slide_path)
         self.query_viewer.selected_qrectf_level_downsample = 1
         self.query_viewer.selected_qrectf_0_level = start_selection_rect
         self.query_viewer.update_selected_rect_view()
@@ -185,7 +174,8 @@ class CbirMainWindow(QMainWindow):
         self.result_media_objects_widget = self.ui.bottom_widget
         self.result_media_objects_widget.list_view.setViewMode(QtWidgets.QListView.ListMode)
         self.result_media_objects_widget.list_view.setSelectionMode(QAbstractItemView.NoSelection)
-        self.result_media_objects_widget.list_view.update_icon_max_size_or_ratio((200, 0.5))
+        self.result_media_objects_widget.list_view.update_icon_max_size_or_ratio(
+            result_media_objects_icon_max_size_or_ratio)
 
     def on_select_all_images(self):
         self.base_media_objects_widget.list_view.selectAll()
@@ -252,6 +242,8 @@ class CbirMainWindow(QMainWindow):
         available_models_for_selected_images_strs = [str_ for str_ in str__model if
                                                      len(str__model[str_]) == n_selected_images]
         chosen_str = self.get_chosen_str(available_models_for_selected_images_strs)
+        if not chosen_str:
+            return None
         chosen_tiles_descriptors_models = str__model[chosen_str]
         return chosen_tiles_descriptors_models
 
@@ -259,7 +251,7 @@ class CbirMainWindow(QMainWindow):
         chosen_item, okPressed = QInputDialog.getItem(self, "Select tile and descriptor params", "", choice_items, 0,
                                                       False)
         if not okPressed:
-            return
+            return None
         print(chosen_item)
         return chosen_item
 
@@ -270,7 +262,6 @@ class CbirMainWindow(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
-    cache_size_in_kb = 300 * 10 ** 3
     QPixmapCache.setCacheLimit(cache_size_in_kb)
     QPixmapCache.clear()
     win = CbirMainWindow()
