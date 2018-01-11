@@ -39,7 +39,7 @@
      <x>0</x>
      <y>0</y>
      <width>794</width>
-     <height>20</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="db_menu">
@@ -56,6 +56,7 @@
     <property name="title">
      <string>actions</string>
     </property>
+    <addaction name="action_select_all_images"/>
    </widget>
    <addaction name="db_menu"/>
    <addaction name="query_menu"/>
@@ -97,6 +98,11 @@
     <string>load</string>
    </property>
   </action>
+  <action name="action_select_all_images">
+   <property name="text">
+    <string>select all images</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -113,7 +119,7 @@
   <customwidget>
    <class>MediaObjectWidget</class>
    <extends>QWidget</extends>
-   <header>media_object</header>
+   <header>media_object_widget</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

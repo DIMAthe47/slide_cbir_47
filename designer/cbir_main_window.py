@@ -33,7 +33,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.setStretch(1, 3)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 794, 20))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 794, 21))
         self.menubar.setObjectName("menubar")
         self.db_menu = QtWidgets.QMenu(self.menubar)
         self.db_menu.setObjectName("db_menu")
@@ -59,6 +59,9 @@ class Ui_MainWindow(object):
         self.action_show_query_tile.setObjectName("action_show_query_tile")
         self.query_load_action = QtWidgets.QAction(MainWindow)
         self.query_load_action.setObjectName("query_load_action")
+        self.action_select_all_images = QtWidgets.QAction(MainWindow)
+        self.action_select_all_images.setObjectName("action_select_all_images")
+        self.menu_action.addAction(self.action_select_all_images)
         self.menubar.addAction(self.db_menu.menuAction())
         self.menubar.addAction(self.query_menu.menuAction())
         self.menubar.addAction(self.menu_action.menuAction())
@@ -79,7 +82,7 @@ class Ui_MainWindow(object):
         self.action_search.setText(_translate("MainWindow", "search"))
         self.action_show_query_tile.setText(_translate("MainWindow", "show query tile"))
         self.query_load_action.setText(_translate("MainWindow", "load"))
-
+        self.action_select_all_images.setText(_translate("MainWindow", "select all images"))
 
 from media_object_widget import MediaObjectWidget
 from slide_viewer import SlideViewer

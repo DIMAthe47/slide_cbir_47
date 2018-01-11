@@ -32,7 +32,8 @@ start_slide_path = r'C:\Users\DIMA\Downloads\JP2K-33003-1.svs'
 
 start_filepathes_to_models = [
     "temp/db_models/JP2K-33003-1.json",
-    "temp/db_models/JP2K-33003-1-copy.json",
+    "temp/db_models/CMU-1-Small-Region.json",
+    # "temp/db_models/JP2K-33003-1-copy.json",
 ]
 
 
@@ -49,7 +50,7 @@ def build_media_object_text(tiles_descriptors_model):
     rect_size = rect_tiles_model["computer_func_params"]["rect_size"]
     tile_size = rect_tiles_model["computer_func_params"]["tile_size"]
     img_name = os.path.basename(img_path)
-    media_object_text = "img_name: {}, image_size: {}, tile_size: {}".format(img_name, rect_size, tile_size)
+    media_object_text = "img_name: {}, img_size: {}, tile_size: {}".format(img_name, rect_size, tile_size)
     return media_object_text
 
 
@@ -78,9 +79,11 @@ def tiles_descriptors_model_to_str(tiles_descriptors_model):
 
 
 def build_media_object_with_intensities_tiles(distances, tiles_descriptor_model, icon_size):
-    print(distances)
-    normalized_distances = distances / np.max(distances)
-    alphas = [128 - 128 * dist for dist in normalized_distances]
+    # print(distances)
+    # normalized_distances = distances/ np.max(distances)
+    normalized_distances = (distances - np.min(distances)) / (np.max(distances) - np.min(distances))
+    # alphas = [128 - 128 * dist for dist in normalized_distances]
+    alphas = [128 * 128 ** (-dist) for dist in normalized_distances]
     qcolors = [QColor(0, 255, 0, int(alpha)) for alpha in alphas]
     rect_tiles_model = model_utils.find_rect_tiles_model(tiles_descriptor_model)
     rect_tiles = list(computer_utils.compute_model(rect_tiles_model))
@@ -121,11 +124,10 @@ def build_query_tile_descriptor_model(img_path, tile_rect, downsample,
         ]
     }
 
-    tiles_descriptor_model_copy = dict(tiles_descriptor_model)
-    pilimage_to_matrix_model, parent_model = model_utils.find_pilimage_to_matrix_model(tiles_descriptor_model_copy)
-    pilimage_to_matrix_model_copy = dict(pilimage_to_matrix_model)
-    parent_model["input_model"] = pilimage_to_matrix_model_copy
-    pilimage_to_matrix_model_copy["input_model"] = query_tile_model
+    from copy import deepcopy
+    tiles_descriptor_model_copy = deepcopy(tiles_descriptor_model)
+    openslide_tiler_model, parent_model = model_utils.find_openslide_tiler_model(tiles_descriptor_model_copy)
+    parent_model["input_model"] = query_tile_model
     tiles_descriptor_model_copy["output_model"] = {
         "type": "inmemory"
     }
@@ -137,7 +139,7 @@ class CbirMainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(CbirMainWindow, self).__init__()
         self.setWindowTitle("CBIR GUI")
-        self.setMinimumSize(1000, 700)
+        self.setMinimumSize(1300, 800)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setup_base_media_objects_widget()
@@ -164,13 +166,13 @@ class CbirMainWindow(QMainWindow):
         action_search.set_list_view(self.base_media_objects_widget.list_view)
         action_search.set_data_consumer(self.on_search_action)
         self.ui.menu_action.addAction(action_search)
+        self.ui.action_select_all_images.triggered.connect(self.on_select_all_images)
 
     def setup_base_media_objects_widget(self):
         self.base_media_objects_widget = self.ui.left_widget
         self.base_media_objects_widget.list_view.setViewMode(QtWidgets.QListView.ListMode)
         media_objects = [filepath_to_media_object(source) for source in start_filepathes_to_models]
         self.base_media_objects_widget.list_model.update_media_objects(media_objects)
-        self.base_media_objects_widget.list_view.selectAll()
 
     def setup_query_viewer(self):
         self.query_viewer = self.ui.right_widget
@@ -184,6 +186,9 @@ class CbirMainWindow(QMainWindow):
         self.result_media_objects_widget.list_view.setViewMode(QtWidgets.QListView.ListMode)
         self.result_media_objects_widget.list_view.setSelectionMode(QAbstractItemView.NoSelection)
         self.result_media_objects_widget.list_view.update_icon_max_size_or_ratio((200, 0.5))
+
+    def on_select_all_images(self):
+        self.base_media_objects_widget.list_view.selectAll()
 
     def on_search_action(self, media_objects_data):
         selected_query_qrectf = self.query_viewer.selected_qrectf_0_level
@@ -218,6 +223,7 @@ class CbirMainWindow(QMainWindow):
         for chosen_tiles_descriptors_model in chosen_tiles_descriptors_models:
             distance_model = generate_distance_matrix_model(query_tile_descriptor_model, chosen_tiles_descriptors_model)
             distances = computer_utils.compute_model(distance_model, force=True)
+            distances = list(distances)
             distances = np.array(distances).squeeze()
             media_object = build_media_object_with_intensities_tiles(distances, chosen_tiles_descriptors_model,
                                                                      self.result_media_objects_widget.list_view.icon_size)

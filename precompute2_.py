@@ -7,10 +7,13 @@ from model_generators import generate_image_model, generate_rect_tiles_model, ge
 import openslide
 
 from model_generators.descriptor_model_generators import generate_models_array
+from model_generators.image_transform_model_generators import generate_pilimage_to_resizedpilimage_model
 
 
 def main():
     slide_path = r'C:\Users\DIMA\Downloads\JP2K-33003-1.svs'
+    # slide_path = r'C:\Users\DIMA\Downloads\CMU-1-Small-Region.svs'
+
     slide = openslide.OpenSlide(slide_path)
     slide_size = slide.level_dimensions[0]
     image_model = generate_image_model(slide_path)
@@ -18,6 +21,7 @@ def main():
     rect_tiles_model = generate_rect_tiles_model(slide_size, tile_size, tile_size)
     tiling_model = generate_tiling_model(rect_tiles_model, image_model, 1)
     tiling_model = generate_rgbapilimage_to_rgbpilimage_model(tiling_model)
+    tiling_model = generate_pilimage_to_resizedpilimage_model(tiling_model, tile_size)
     tiling_model = generate_pilimage_to_matrix_model(tiling_model)
 
     descriptor_models = [
@@ -29,18 +33,19 @@ def main():
                 "dtype": "int"
             },
         },
-        {
-            "name": "histogram",
-            "params": {
-                "n_bins": 256,
-                "density": True,
-                "dtype": "int"
-            },
-        },
+        # {
+        #     "name": "histogram",
+        #     "params": {
+        #         "n_bins": 256,
+        #         "density": True,
+        #         "dtype": "int"
+        #     },
+        # },
         {
             "name": "vgg16",
             "params": {
                 "layer_name": "fc1",
+                "chunk_size":30
             },
         },
     ]
