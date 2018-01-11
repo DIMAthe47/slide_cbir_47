@@ -220,8 +220,15 @@ class CbirMainWindow(QMainWindow):
                                                                         chosen_tiles_descriptors_models[0])
         print(query_tile_descriptor_model)
         media_objects = []
+        query_descriptor = computer_utils.compute_model(query_tile_descriptor_model, force=True)
+        query_descriptor = list(query_descriptor)[0]
+        query_descriptor_model = {
+            "type": "list",
+            "list": [query_descriptor]
+        }
         for chosen_tiles_descriptors_model in chosen_tiles_descriptors_models:
-            distance_model = generate_distance_matrix_model(query_tile_descriptor_model, chosen_tiles_descriptors_model)
+            # distance_model = generate_distance_matrix_model(query_tile_descriptor_model, chosen_tiles_descriptors_model)
+            distance_model = generate_distance_matrix_model(query_descriptor_model, chosen_tiles_descriptors_model)
             distances = computer_utils.compute_model(distance_model, force=True)
             distances = list(distances)
             distances = np.array(distances).squeeze()
