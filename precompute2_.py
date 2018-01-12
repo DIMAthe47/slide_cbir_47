@@ -12,9 +12,9 @@ from model_generators.image_transform_model_generators import generate_pilimage_
 
 def main():
     # slide_path = r'C:\Users\DIMA\Downloads\JP2K-33003-1.svs'
-    # slide_path = r'C:\Users\DIMA\Downloads\CMU-1-Small-Region.svs'
+    slide_path = r'C:\Users\DIMA\Downloads\CMU-1-Small-Region.svs'
     # slide_path = r'C:\Users\dmitriy\Downloads\JP2K-33003-1.svs'
-    slide_path = r'C:\Users\dmitriy\Downloads\CMU-1-Small-Region.svs'
+    # slide_path = r'C:\Users\dmitriy\Downloads\CMU-1-Small-Region.svs'
     slide = openslide.OpenSlide(slide_path)
     slide_size = slide.level_dimensions[0]
     image_model = generate_image_model(slide_path)
@@ -34,19 +34,26 @@ def main():
                 "dtype": "int"
             },
         },
-        # {
-        #     "name": "histogram",
-        #     "params": {
-        #         "n_bins": 256,
-        #         "density": True,
-        #         "dtype": "int"
-        #     },
-        # },
+        {
+            "name": "histogram",
+            "params": {
+                "n_bins": 256,
+                "density": True,
+                "dtype": "int"
+            },
+        },
         {
             "name": "vgg16",
             "params": {
                 "layer_name": "fc1",
                 "chunk_size":30
+            },
+        },
+        {
+            "name": "vgg16",
+            "params": {
+                "layer_name": "fc2",
+                "chunk_size": 30
             },
         },
     ]

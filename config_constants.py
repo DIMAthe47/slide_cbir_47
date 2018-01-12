@@ -1,8 +1,8 @@
-# start_slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
-# start_slide_path = r'C:\Users\DIMA\Downloads\JP2K-33003-1.svs'
 from PyQt5.QtCore import QRectF
 
-start_query_slide_path = r'C:\Users\dmitriy\Downloads\JP2K-33003-1.svs'
+# start_query_slide_path = r'C:\Users\dmitriy\Downloads\JP2K-33003-1.svs'
+# start_query_slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'
+start_query_slide_path = r'C:\Users\DIMA\Downloads\JP2K-33003-1.svs'
 
 # start_db_filepathes_to_models = ["/home/dimathe47/PycharmProjects/slide_cbir_47/models/array0.json",
 #                               "/home/dimathe47/PycharmProjects/slide_cbir_47/models/array1.json"]

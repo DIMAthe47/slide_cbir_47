@@ -1,0 +1,6 @@
+amd8350
+model computed: vgg16_fc1 in 3067.888473 seconds
+1060GTX(3GB)
+model computed: vgg16_fc1 in 99.853712 seconds
+intel7
+model computed: vgg16_fc1 in 2359.453953 seconds

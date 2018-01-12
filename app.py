@@ -1,4 +1,6 @@
 import sys
+from datetime import datetime
+from functools import lru_cache
 
 from PyQt5 import QtWidgets
 
@@ -12,6 +14,7 @@ from cbir_core.computer.model_utils import find_image_path, find_downsample
 from config_constants import start_query_slide_path, start_db_filepathes_to_models, start_selection_rect, \
     main_window_minimum_size, result_media_objects_icon_max_size_or_ratio, cache_size_in_kb, \
     base_media_objects_icon_max_size_or_ratio
+from elapsed_timer import elapsed_timer
 from media_object import MediaObject
 from tiled_pixmap import TiledPixmap
 from media_object_action import OnLoadMediaObjectsAction, OnGetSelectedMediaObjectsDataAction
@@ -65,31 +68,49 @@ def tiles_descriptors_model_to_str(tiles_descriptors_model):
     return str_
 
 
+@lru_cache(maxsize=100)
+def read_thumbnail(slide_path, thumbnail_size):
+    slide = openslide.OpenSlide(slide_path)
+    thumbnail = slide.get_thumbnail(thumbnail_size)
+    return thumbnail
+
+
+@lru_cache(maxsize=100)
+def get_slide_size_0(slide_path, downsample):
+    slide = openslide.OpenSlide(slide_path)
+    return slide.level_dimensions[slide.get_best_level_for_downsample(downsample)]
+
+
 def build_media_object_with_intensities_tiles(distances, tiles_descriptor_model, icon_size):
     # print(distances)
     # normalized_distances = distances/ np.max(distances)
     normalized_distances = (distances - np.min(distances)) / (np.max(distances) - np.min(distances))
     # alphas = [128 - 128 * dist for dist in normalized_distances]
-    alphas = [128 * 128 ** (-dist) for dist in normalized_distances]
-    qcolors = [QColor(0, 255, 0, int(alpha)) for alpha in alphas]
-    rect_tiles_model = model_utils.find_rect_tiles_model(tiles_descriptor_model)
-    rect_tiles = list(computer_utils.compute_model(rect_tiles_model))
-    # tile_model =  model_utils.find_tile_rects_model(chosen_tiles_descriptors_model)
-    img_path = find_image_path(tiles_descriptor_model)
-    slide = openslide.OpenSlide(img_path)
-    thumbnail_size = icon_size
-    thumbnail = slide.get_thumbnail(thumbnail_size)
-    thumbnail_size = thumbnail.size
-    downsample = find_downsample(tiles_descriptor_model)
-    slide_size_0 = slide.level_dimensions[slide.get_best_level_for_downsample(downsample)]
-    slide_size = (slide_size_0[0] / downsample, slide_size_0[1] / downsample)
-    thumbnail_scale = (slide_size[0] / thumbnail_size[0], slide_size[1] / thumbnail_size[1])
-    slide_tile_size = (rect_tiles[0][2], rect_tiles[0][3])
-    columns, rows = get_n_columns_n_rows_for_tile_size(slide_size_0, slide_tile_size)
-    thumbnail_rects = gen_slice_rect_n(thumbnail_size, columns, rows)
+    # alphas = [128 * 128 ** (-dist) for dist in normalized_distances]
+    alphas = 128 ** (1 - normalized_distances)
+
+    def img_with_intensities(icon_size):
+        qcolors = [QColor(0, 255, 0, int(alpha)) for alpha in alphas]
+        rect_tiles_model = model_utils.find_rect_tiles_model(tiles_descriptor_model)
+        rect_tiles = list(computer_utils.compute_model(rect_tiles_model))
+        # tile_model =  model_utils.find_tile_rects_model(chosen_tiles_descriptors_model)
+        img_path = find_image_path(tiles_descriptor_model)
+        thumbnail_size = icon_size
+        with elapsed_timer() as elapsed:
+            thumbnail = read_thumbnail(img_path, thumbnail_size)
+            print("get_thumbnail", elapsed())
+            thumbnail_size = thumbnail.size
+            downsample = find_downsample(tiles_descriptor_model)
+            slide_size_0 = get_slide_size_0(img_path, downsample)
+            slide_size = (slide_size_0[0] / downsample, slide_size_0[1] / downsample)
+            thumbnail_scale = (slide_size[0] / thumbnail_size[0], slide_size[1] / thumbnail_size[1])
+            slide_tile_size = (rect_tiles[0][2], rect_tiles[0][3])
+            columns, rows = get_n_columns_n_rows_for_tile_size(slide_size_0, slide_tile_size)
+            thumbnail_rects = gen_slice_rect_n(thumbnail_size, columns, rows)
+            return TiledPixmap(thumbnail, thumbnail_rects, qcolors)
 
     media_object_text = build_media_object_text(tiles_descriptor_model)
-    media_object = MediaObject(media_object_text, TiledPixmap(thumbnail, thumbnail_rects, qcolors),
+    media_object = MediaObject(media_object_text, img_with_intensities,
                                tiles_descriptor_model)
     return media_object
 
@@ -203,6 +224,11 @@ class CbirMainWindow(QMainWindow):
             QMessageBox.question(self, 'Error', "No descriptor model selected", QMessageBox.Ok)
             return
 
+        self.statusBar().showMessage("Searching...")
+        self.result_media_objects_widget.list_model.update_media_objects([])
+        # return
+        # self.result_media_objects_widget.update()
+
         selected_query_rect = qrectf_to_rect(selected_query_qrectf)
         query_tile_descriptor_model = build_query_tile_descriptor_model(self.query_viewer.slide_path,
                                                                         selected_query_rect,
@@ -217,6 +243,7 @@ class CbirMainWindow(QMainWindow):
             "list": [query_descriptor]
         }
         for chosen_tiles_descriptors_model in chosen_tiles_descriptors_models:
+            start_datetime = datetime.now()
             # distance_model = generate_distance_matrix_model(query_tile_descriptor_model, chosen_tiles_descriptors_model)
             distance_model = generate_distance_matrix_model(query_descriptor_model, chosen_tiles_descriptors_model)
             distances = computer_utils.compute_model(distance_model, force=True)
@@ -225,6 +252,7 @@ class CbirMainWindow(QMainWindow):
             media_object = build_media_object_with_intensities_tiles(distances, chosen_tiles_descriptors_model,
                                                                      self.result_media_objects_widget.list_view.icon_size)
             media_objects.append(media_object)
+        self.statusBar().showMessage("Searching done")
         self.result_media_objects_widget.list_model.update_media_objects(media_objects)
 
         # nearest_indices_model = generate_nearest_indices_model(distance_model, -1, "computed/nearest_indices.hdf5")
