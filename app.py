@@ -20,7 +20,6 @@ from tiled_pixmap import TiledPixmap
 from media_object_action import OnLoadMediaObjectsAction, OnGetSelectedMediaObjectsDataAction
 import numpy as np
 
-from CreateModelsDialog import CreateModelsDialog
 from designer.cbir_main_window import Ui_MainWindow
 
 import json_utils
@@ -40,7 +39,7 @@ def build_media_object_text(tiles_descriptors_model):
     rect_size = rect_tiles_model["computer_func_params"]["rect_size"]
     tile_size = rect_tiles_model["computer_func_params"]["tile_size"]
     img_name = os.path.basename(img_path)
-    media_object_text = "img_name: {}, img_size: {}, tile_size: {}".format(img_name, rect_size, tile_size)
+    media_object_text = "img_name: {}\nimg_size: {}\ntile_size: {}".format(img_name, rect_size, tile_size)
     return media_object_text
 
 
@@ -166,9 +165,6 @@ class CbirMainWindow(QMainWindow):
         db_action_load.set_media_object_extractor(filepath_to_media_object)
         self.ui.db_menu.addAction(db_action_load)
 
-        db_action_create = self.ui.db_menu.addAction("create")
-        db_action_create.triggered.connect(self.on_create_models)
-
     def setup_action_menu(self):
         action_search = OnGetSelectedMediaObjectsDataAction(self.ui.menubar, "search")
         action_search.set_list_view(self.base_media_objects_widget.list_view)
@@ -282,11 +278,6 @@ class CbirMainWindow(QMainWindow):
             return None
         print(chosen_item)
         return chosen_item
-
-    def on_create_models(self):
-        CreateModelsDialog(self).show()
-        print("on_create_models")
-
 
 def main():
     app = QApplication(sys.argv)

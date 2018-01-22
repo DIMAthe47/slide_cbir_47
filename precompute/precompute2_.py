@@ -12,7 +12,8 @@ from model_generators.image_transform_model_generators import generate_pilimage_
 
 def main():
     # slide_path = r'C:\Users\DIMA\Downloads\JP2K-33003-1.svs'
-    slide_path = r'C:\Users\DIMA\Downloads\CMU-1-Small-Region.svs'
+    # slide_path = r'C:\Users\DIMA\Downloads\CMU-1-Small-Region.svs'
+    slide_path = r'C:\Users\DIMA\Downloads\11096.svs'
     # slide_path = r'C:\Users\dmitriy\Downloads\JP2K-33003-1.svs'
     # slide_path = r'C:\Users\dmitriy\Downloads\CMU-1-Small-Region.svs'
     slide = openslide.OpenSlide(slide_path)
@@ -26,6 +27,14 @@ def main():
     tiling_model = generate_pilimage_to_matrix_model(tiling_model)
 
     descriptor_models = [
+        {
+            "name": "histogram",
+            "params": {
+                "n_bins": 64,
+                "density": True,
+                "dtype": "int"
+            },
+        },
         {
             "name": "histogram",
             "params": {

@@ -6,7 +6,7 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -85,5 +85,5 @@ class Ui_MainWindow(object):
         self.action_select_all_images.setText(_translate("MainWindow", "select all images"))
 
 from media_object_widget import MediaObjectWidget
-from slide_viewer import SlideViewer
-from slide_viewer_menu import SlideViewerMenu
+from slide_viewer_47.widgets import SlideViewer
+from slide_viewer_47.widgets import SlideViewerMenu
