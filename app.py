@@ -17,7 +17,8 @@ from config_constants import start_query_slide_path, start_db_filepathes_to_mode
 from elapsed_timer import elapsed_timer
 from media_object import MediaObject
 from tiled_pixmap import TiledPixmap
-from media_object_action import OnLoadMediaObjectsAction, OnGetSelectedMediaObjectsDataAction
+from media_objects_47.widgets.on_load_media_objects_action import OnLoadMediaObjectsAction
+from media_objects_47.widgets.on_get_selected_media_objects_action import OnGetSelectedMediaObjectsDataAction
 import numpy as np
 
 from designer.cbir_main_window import Ui_MainWindow
