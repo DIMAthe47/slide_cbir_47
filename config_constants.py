@@ -12,11 +12,11 @@ start_db_filepathes_to_models = [
     "temp/db_models/CMU-1-Small-Region.json",
     # "temp/db_models/JP2K-33003-1-copy.json",
 ]
-start_selection_rect = QRectF(0, 0, 500, 500)
+start_selection_rect = (0, 0, 500, 500)
 
-main_window_minimum_size = (1300, 800)
+main_window_size = (1300, 800)
 
-result_media_objects_icon_max_size_or_ratio = (200, 0.5)
-base_media_objects_icon_max_size_or_ratio = (100, 0.25)
+result_items_icon_max_size_or_ratio = (200, 0.5)
+base_items_icon_max_size_or_ratio = (100, 0.25)
 
-cache_size_in_kb = 300 * 10 ** 3
+cache_size_in_kb = 700 * 10 ** 3

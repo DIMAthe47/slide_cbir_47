@@ -5,20 +5,17 @@ from functools import lru_cache
 from PyQt5 import QtWidgets
 
 import os
-from PyQt5.QtCore import QRectF
+from PyQt5.QtCore import QRectF, Qt, QSize
 from PyQt5.QtGui import QColor, QPixmapCache
 from PyQt5.QtWidgets import QApplication, QMainWindow, QInputDialog, QMessageBox, QAbstractItemView
 
 from cbir_core.computer import model_utils, computer_utils
 from cbir_core.computer.model_utils import find_image_path, find_downsample
 from config_constants import start_query_slide_path, start_db_filepathes_to_models, start_selection_rect, \
-    main_window_minimum_size, result_media_objects_icon_max_size_or_ratio, cache_size_in_kb, \
-    base_media_objects_icon_max_size_or_ratio
+    main_window_size, result_items_icon_max_size_or_ratio, cache_size_in_kb, \
+    base_items_icon_max_size_or_ratio
+from descriptor_tile_models import DescriptorTileModels
 from elapsed_timer import elapsed_timer
-from media_object import MediaObject
-from tiled_pixmap import TiledPixmap
-from media_objects_47.widgets.on_load_media_objects_action import OnLoadMediaObjectsAction
-from media_objects_47.widgets.on_get_selected_media_objects_action import OnGetSelectedMediaObjectsDataAction
 import numpy as np
 
 from designer.cbir_main_window import Ui_MainWindow
@@ -27,14 +24,24 @@ import json_utils
 from model_generators import *
 import openslide
 
+from slide_list_view_47.model.role_funcs import filepath_to_slideviewparams, imagepath_decoration_func
+from slide_list_view_47.model.slide_list_model import SlideListModel
+from slide_list_view_47.widgets.actions.on_get_selected_items_action import OnGetSelectedItemsDataAction
+from slide_list_view_47.widgets.actions.on_load_items_action import OnLoadItemsAction
+from slide_list_view_47.widgets.slide_viewer_delegate import SlideViewerDelegate
+from slide_viewer_47.common.slide_view_params import SlideViewParams
+from slide_viewer_47.widgets.slide_viewer import SlideViewer
 from tiling_utils import get_n_columns_n_rows_for_tile_size, gen_slice_rect_n
 
 
-def qrectf_to_rect(qrectf: QRectF):
-    return (int(qrectf.x()), int(qrectf.y()), int(qrectf.width()), int(qrectf.height()))
+def excepthook(excType, excValue, tracebackobj):
+    print(excType, excValue, tracebackobj)
 
 
-def build_media_object_text(tiles_descriptors_model):
+sys.excepthook = excepthook
+
+
+def build_item_text(tiles_descriptors_model):
     img_path = find_image_path(tiles_descriptors_model)
     rect_tiles_model = model_utils.find_rect_tiles_model(tiles_descriptors_model)
     rect_size = rect_tiles_model["computer_func_params"]["rect_size"]
@@ -44,18 +51,28 @@ def build_media_object_text(tiles_descriptors_model):
     return media_object_text
 
 
-def filepath_to_media_object(filepath):
+def filepath_to_tiles_descritpors_model(filepath):
     tiles_descritpors_models = json_utils.read(filepath)
+    return DescriptorTileModels(tiles_descritpors_models)
+
+
+def descriptor_tile_model_to_slide_view_params(item: DescriptorTileModels):
+    return item.slide_view_params
+
+
+def descriptor_tile_model_to_str(item: DescriptorTileModels):
+    tiles_descriptors_model = item.models[0]
+    return build_item_text(tiles_descriptors_model)
+
+
+def descriptor_tile_model_decoration_func(tiles_descritpors_models: dict, icon_size: QSize):
     img_path = find_image_path(tiles_descritpors_models[0])
-    media_object_text = build_media_object_text(tiles_descritpors_models[0])
+    return imagepath_decoration_func(img_path, icon_size)
 
-    # pilimg = openslide.OpenSlide(img_path).get_thumbnail(thumbnail_size)
-    def thumbnail_func(thumbnail_size):
-        pilimg = openslide.OpenSlide(img_path).get_thumbnail(thumbnail_size)
-        return pilimg
 
-    media_object = MediaObject(media_object_text, thumbnail_func, tiles_descritpors_models)
-    return media_object
+def slideviewparams_setter(items, index, value):
+    item: DescriptorTileModels = items[index.row()]
+    item.slide_view_params = value
 
 
 def tiles_descriptors_model_to_str(tiles_descriptors_model):
@@ -68,60 +85,32 @@ def tiles_descriptors_model_to_str(tiles_descriptors_model):
     return str_
 
 
-@lru_cache(maxsize=100)
-def read_thumbnail(slide_path, thumbnail_size):
-    slide = openslide.OpenSlide(slide_path)
-    thumbnail = slide.get_thumbnail(thumbnail_size)
-    return thumbnail
-
-
-@lru_cache(maxsize=100)
-def get_slide_size_0(slide_path, downsample):
-    slide = openslide.OpenSlide(slide_path)
-    return slide.level_dimensions[slide.get_best_level_for_downsample(downsample)]
-
-
-def build_media_object_with_intensities_tiles(distances, tiles_descriptor_model, icon_size):
+def build_result_item(distances, tiles_descriptor_model):
     # print(distances)
     # normalized_distances = distances/ np.max(distances)
     normalized_distances = (distances - np.min(distances)) / (np.max(distances) - np.min(distances))
     # alphas = [128 - 128 * dist for dist in normalized_distances]
     # alphas = [128 * 128 ** (-dist) for dist in normalized_distances]
     alphas = 128 ** (1 - normalized_distances)
-
-    def img_with_intensities(icon_size):
-        qcolors = [QColor(0, 255, 0, int(alpha)) for alpha in alphas]
-        rect_tiles_model = model_utils.find_rect_tiles_model(tiles_descriptor_model)
-        rect_tiles = list(computer_utils.compute_model(rect_tiles_model))
-        # tile_model =  model_utils.find_tile_rects_model(chosen_tiles_descriptors_model)
-        img_path = find_image_path(tiles_descriptor_model)
-        thumbnail_size = icon_size
-        with elapsed_timer() as elapsed:
-            thumbnail = read_thumbnail(img_path, thumbnail_size)
-            print("get_thumbnail", elapsed())
-            thumbnail_size = thumbnail.size
-            downsample = find_downsample(tiles_descriptor_model)
-            slide_size_0 = get_slide_size_0(img_path, downsample)
-            slide_size = (slide_size_0[0] / downsample, slide_size_0[1] / downsample)
-            thumbnail_scale = (slide_size[0] / thumbnail_size[0], slide_size[1] / thumbnail_size[1])
-            slide_tile_size = (rect_tiles[0][2], rect_tiles[0][3])
-            columns, rows = get_n_columns_n_rows_for_tile_size(slide_size_0, slide_tile_size)
-            thumbnail_rects = gen_slice_rect_n(thumbnail_size, columns, rows)
-            return TiledPixmap(thumbnail, thumbnail_rects, qcolors)
-
-    media_object_text = build_media_object_text(tiles_descriptor_model)
-    media_object = MediaObject(media_object_text, img_with_intensities,
-                               tiles_descriptor_model)
-    return media_object
+    colors = [(0, 255, 0, int(alpha)) for alpha in alphas]
+    rect_tiles_model = model_utils.find_rect_tiles_model(tiles_descriptor_model)
+    rect_tiles = list(computer_utils.compute_model(rect_tiles_model))
+    img_path = find_image_path(tiles_descriptor_model)
+    slide_view_params = SlideViewParams(img_path, grid_rects_0_level=rect_tiles, grid_colors_0_level=colors,
+                                        grid_visible=True)
+    item = DescriptorTileModels([tiles_descriptor_model])
+    item.slide_view_params = slide_view_params
+    return item
 
 
 # important. Note that in perspective query can come from outside the system - in this case we will have no access to slide or slide_path
-def build_query_tile_descriptor_model(img_path, tile_rect, downsample,
+def build_query_tile_descriptor_model(img_path, tile_rect, level,
                                       tiles_descriptor_model):
     # TODO mess with tile_rect. It is (x,y,w,h) or (x,y,x+w,y+h)!?
     slide = openslide.OpenSlide(img_path)
-    downsample = 1
-    level = slide.get_best_level_for_downsample(downsample)
+    # downsample = 1
+    # level = slide.get_best_level_for_downsample(downsample)
+    level = 0
     tile = slide.read_region(tile_rect[0:2], level, tile_rect[2:4])
     # tile.show(title="query_tile")
     query_tile_model = {
@@ -147,12 +136,12 @@ class CbirMainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(CbirMainWindow, self).__init__()
         self.setWindowTitle("CBIR GUI")
-        self.setMinimumSize(*main_window_minimum_size)
+        self.resize(*main_window_size)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setup_base_media_objects_widget()
+        self.setup_base_items_widget()
         self.setup_query_viewer()
-        self.setup_result_media_objects_widget()
+        self.setup_result_items_widget()
         self.setup_db_menu()
         self.setup_query_menu()
         self.setup_action_menu()
@@ -161,54 +150,65 @@ class CbirMainWindow(QMainWindow):
         self.ui.query_menu.set_slide_viewer(self.query_viewer)
 
     def setup_db_menu(self):
-        db_action_load = OnLoadMediaObjectsAction(self.ui.menubar, "load")
-        db_action_load.set_list_model(self.base_media_objects_widget.list_model)
-        db_action_load.set_media_object_extractor(filepath_to_media_object)
+        db_action_load = OnLoadItemsAction("load", self.ui.menubar)
+        db_action_load.media_object_builder = descriptor_tile_model_to_slide_view_params
+        db_action_load.set_list_model(self.base_items_widget.list_model)
         self.ui.db_menu.addAction(db_action_load)
 
     def setup_action_menu(self):
-        action_search = OnGetSelectedMediaObjectsDataAction(self.ui.menubar, "search")
-        action_search.set_list_view(self.base_media_objects_widget.list_view)
+        action_search = OnGetSelectedItemsDataAction(self.ui.menubar, "search")
+        action_search.set_list_view(self.base_items_widget.list_view)
         action_search.set_data_consumer(self.on_search_action)
         self.ui.menu_action.addAction(action_search)
         self.ui.action_select_all_images.triggered.connect(self.on_select_all_images)
 
-    def setup_base_media_objects_widget(self):
-        self.base_media_objects_widget = self.ui.left_widget
-        self.base_media_objects_widget.list_view.setViewMode(QtWidgets.QListView.ListMode)
-        media_objects = [filepath_to_media_object(source) for source in start_db_filepathes_to_models]
-        self.base_media_objects_widget.list_model.update_media_objects(media_objects)
-        self.base_media_objects_widget.list_view.update_icon_max_size_or_ratio(
-            base_media_objects_icon_max_size_or_ratio)
+    def setup_base_items_widget(self):
+        self.base_items_widget = self.ui.left_widget
+        self.base_items_widget.list_view.setViewMode(QtWidgets.QListView.ListMode)
+        items = [filepath_to_tiles_descritpors_model(source) for source in
+                 start_db_filepathes_to_models]
+        self.base_items_widget.list_model.update_items(items)
+
+        # self.base_items_widget.list_model.update_role_func(SlideListModel.SlideViewParamsRole, None)
+        # self.base_items_widget.list_model.update_role_func(Qt.DecorationRole,
+        #                                                    descriptor_tile_model_decoration_func)
+        self.base_items_widget.list_model.update_role_func(Qt.DisplayRole, descriptor_tile_model_to_str)
+        self.base_items_widget.list_model.update_role_func(SlideListModel.SlideViewParamsRole,
+                                                           descriptor_tile_model_to_slide_view_params)
+        self.base_items_widget.list_model.slide_view_params_setter = slideviewparams_setter
+        self.base_items_widget.list_view.setItemDelegate(SlideViewerDelegate())
 
     def setup_query_viewer(self):
-        self.query_viewer = self.ui.right_widget
-        self.query_viewer.load_slide(start_query_slide_path)
-        self.query_viewer.selected_qrectf_level_downsample = 1
-        self.query_viewer.selected_qrectf_0_level = start_selection_rect
-        self.query_viewer.update_selected_rect_view()
+        self.query_viewer: SlideViewer = self.ui.right_widget
+        slide_view_params: SlideViewParams = SlideViewParams(start_query_slide_path)
+        slide_view_params.selected_rect_0_level = start_selection_rect
+        self.query_viewer.load(slide_view_params)
 
-    def setup_result_media_objects_widget(self):
-        self.result_media_objects_widget = self.ui.bottom_widget
-        self.result_media_objects_widget.list_view.setViewMode(QtWidgets.QListView.ListMode)
-        self.result_media_objects_widget.list_view.setSelectionMode(QAbstractItemView.NoSelection)
-        self.result_media_objects_widget.list_view.update_icon_max_size_or_ratio(
-            result_media_objects_icon_max_size_or_ratio)
+    def setup_result_items_widget(self):
+        self.result_items_widget = self.ui.bottom_widget
+        self.result_items_widget.list_view.setViewMode(QtWidgets.QListView.IconMode)
+        self.result_items_widget.list_view.setSelectionMode(QAbstractItemView.NoSelection)
+
+        self.result_items_widget.list_model.update_role_func(Qt.DisplayRole, descriptor_tile_model_to_str)
+        self.result_items_widget.list_model.update_role_func(SlideListModel.SlideViewParamsRole,
+                                                             descriptor_tile_model_to_slide_view_params)
+        self.result_items_widget.list_model.slide_view_params_setter = slideviewparams_setter
+        self.result_items_widget.list_view.setItemDelegate(SlideViewerDelegate())
 
     def on_select_all_images(self):
-        self.base_media_objects_widget.list_view.selectAll()
+        self.base_items_widget.list_view.selectAll()
 
-    def on_search_action(self, media_objects_data):
-        selected_query_qrectf = self.query_viewer.selected_qrectf_0_level
-        if not selected_query_qrectf:
+    def on_search_action(self, items):
+
+        if not self.query_viewer.slide_view_params.selected_rect_0_level:
             QMessageBox.question(self, 'Error', "No query rect selected", QMessageBox.Ok)
             return
-
-        # print(media_objects_data)
-        selected_tiles_descriptors_models_arr = media_objects_data
+        # selected_query_qrectf_0_level = QRectF(*self.query_viewer.slide_view_params.selected_rect_0_level)
+        # print(items)
+        selected_tiles_descriptors_models_arr = items
         tiles_descriptors_models = [tiles_descriptor_model for tiles_descriptors_models in
                                     selected_tiles_descriptors_models_arr for tiles_descriptor_model in
-                                    tiles_descriptors_models]
+                                    tiles_descriptors_models.models]
 
         if not tiles_descriptors_models or len(tiles_descriptors_models) == 0:
             QMessageBox.question(self, 'Error', "No models selected", QMessageBox.Ok)
@@ -222,17 +222,18 @@ class CbirMainWindow(QMainWindow):
             return
 
         self.statusBar().showMessage("Searching...")
-        self.result_media_objects_widget.list_model.update_media_objects([])
+        self.result_items_widget.list_model.update_items([])
         # return
-        # self.result_media_objects_widget.update()
+        # self.result_items_widget.update()
 
-        selected_query_rect = qrectf_to_rect(selected_query_qrectf)
-        query_tile_descriptor_model = build_query_tile_descriptor_model(self.query_viewer.slide_path,
-                                                                        selected_query_rect,
-                                                                        self.query_viewer.selected_qrectf_level_downsample,
+        # selected_query_rect = qrectf_to_rect(selected_query_qrectf)
+        selected_rect_0_level_int = [int(x) for x in self.query_viewer.slide_view_params.selected_rect_0_level]
+        query_tile_descriptor_model = build_query_tile_descriptor_model(self.query_viewer.slide_view_params.slide_path,
+                                                                        selected_rect_0_level_int,
+                                                                        self.query_viewer.slide_view_params.level,
                                                                         chosen_tiles_descriptors_models[0])
         print(query_tile_descriptor_model)
-        media_objects = []
+        result_items = []
         query_descriptor = computer_utils.compute_model(query_tile_descriptor_model, force=True)
         query_descriptor = list(query_descriptor)[0]
         query_descriptor_model = {
@@ -246,11 +247,10 @@ class CbirMainWindow(QMainWindow):
             distances = computer_utils.compute_model(distance_model, force=True)
             distances = list(distances)
             distances = np.array(distances).squeeze()
-            media_object = build_media_object_with_intensities_tiles(distances, chosen_tiles_descriptors_model,
-                                                                     self.result_media_objects_widget.list_view.icon_size)
-            media_objects.append(media_object)
+            result_item = build_result_item(distances, chosen_tiles_descriptors_model)
+            result_items.append(result_item)
         self.statusBar().showMessage("Searching done")
-        self.result_media_objects_widget.list_model.update_media_objects(media_objects)
+        self.result_items_widget.list_model.update_items(result_items)
 
         # nearest_indices_model = generate_nearest_indices_model(distance_model, -1, "computed/nearest_indices.hdf5")
         # nearest_indices = computer_utils.compute_model(nearest_indices_model)[0]
@@ -279,6 +279,7 @@ class CbirMainWindow(QMainWindow):
             return None
         print(chosen_item)
         return chosen_item
+
 
 def main():
     app = QApplication(sys.argv)

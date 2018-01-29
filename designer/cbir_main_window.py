@@ -6,7 +6,7 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -14,23 +14,41 @@ class Ui_MainWindow(object):
         MainWindow.resize(794, 618)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.centralwidget)
-        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.central_layout = QtWidgets.QVBoxLayout()
+        self.central_layout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
+        self.central_layout.setObjectName("central_layout")
         self.top_layout = QtWidgets.QHBoxLayout()
-        self.top_layout.setContentsMargins(-1, -1, 0, -1)
         self.top_layout.setObjectName("top_layout")
-        self.left_widget = MediaObjectWidget(self.centralwidget)
+        self.left_widget = SlideListWidget(self.centralwidget)
         self.left_widget.setObjectName("left_widget")
         self.top_layout.addWidget(self.left_widget)
         self.right_widget = SlideViewer(self.centralwidget)
         self.right_widget.setObjectName("right_widget")
         self.top_layout.addWidget(self.right_widget)
-        self.verticalLayout_2.addLayout(self.top_layout)
-        self.bottom_widget = MediaObjectWidget(self.centralwidget)
+        self.top_layout.setStretch(0, 1)
+        self.top_layout.setStretch(1, 1)
+        self.central_layout.addLayout(self.top_layout)
+        self.bottom_layout = QtWidgets.QHBoxLayout()
+        self.bottom_layout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
+        self.bottom_layout.setContentsMargins(0, -1, -1, -1)
+        self.bottom_layout.setObjectName("bottom_layout")
+        self.frame = QtWidgets.QFrame(self.centralwidget)
+        self.frame.setFrameShape(QtWidgets.QFrame.Box)
+        self.frame.setFrameShadow(QtWidgets.QFrame.Plain)
+        self.frame.setMidLineWidth(1)
+        self.frame.setObjectName("frame")
+        self.bottom_widget = SlideListWidget(self.frame)
+        self.bottom_widget.setGeometry(QtCore.QRect(30, -20, 383, 273))
+        self.bottom_widget.setAutoFillBackground(False)
+        self.bottom_widget.setLocale(QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates))
         self.bottom_widget.setObjectName("bottom_widget")
-        self.verticalLayout_2.addWidget(self.bottom_widget)
-        self.verticalLayout_2.setStretch(0, 4)
-        self.verticalLayout_2.setStretch(1, 3)
+        self.bottom_layout.addWidget(self.frame)
+        self.central_layout.addLayout(self.bottom_layout)
+        self.central_layout.setStretch(0, 1)
+        self.central_layout.setStretch(1, 1)
+        self.verticalLayout.addLayout(self.central_layout)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 794, 21))
@@ -84,6 +102,6 @@ class Ui_MainWindow(object):
         self.query_load_action.setText(_translate("MainWindow", "load"))
         self.action_select_all_images.setText(_translate("MainWindow", "select all images"))
 
-from media_object_widget import MediaObjectWidget
-from slide_viewer_47.widgets import SlideViewer
-from slide_viewer_47.widgets import SlideViewerMenu
+from slide_list_view_47.widgets.slide_list_widget import SlideListWidget
+from slide_viewer_47.widgets.slide_viewer import SlideViewer
+from slide_viewer_47.widgets.slide_viewer_menu import SlideViewerMenu
