@@ -50,10 +50,12 @@ class Ui_MainWindow(object):
         self.menubar.setObjectName("menubar")
         self.db_menu = QtWidgets.QMenu(self.menubar)
         self.db_menu.setObjectName("db_menu")
-        self.query_menu = SlideViewerMenu(self.menubar)
+        self.query_menu = QtWidgets.QMenu(self.menubar)
         self.query_menu.setObjectName("query_menu")
         self.menu_action = QtWidgets.QMenu(self.menubar)
         self.menu_action.setObjectName("menu_action")
+        self.results_menu = QtWidgets.QMenu(self.menubar)
+        self.results_menu.setObjectName("results_menu")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -74,10 +76,15 @@ class Ui_MainWindow(object):
         self.query_load_action.setObjectName("query_load_action")
         self.action_select_all_images = QtWidgets.QAction(MainWindow)
         self.action_select_all_images.setObjectName("action_select_all_images")
+        self.actionSdf = QtWidgets.QAction(MainWindow)
+        self.actionSdf.setObjectName("actionSdf")
+        self.actionStuff1 = QtWidgets.QAction(MainWindow)
+        self.actionStuff1.setObjectName("actionStuff1")
         self.menu_action.addAction(self.action_select_all_images)
         self.menubar.addAction(self.db_menu.menuAction())
         self.menubar.addAction(self.query_menu.menuAction())
         self.menubar.addAction(self.menu_action.menuAction())
+        self.menubar.addAction(self.results_menu.menuAction())
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -88,6 +95,7 @@ class Ui_MainWindow(object):
         self.db_menu.setTitle(_translate("MainWindow", "db"))
         self.query_menu.setTitle(_translate("MainWindow", "query"))
         self.menu_action.setTitle(_translate("MainWindow", "actions"))
+        self.results_menu.setTitle(_translate("MainWindow", "results"))
         self.actionLoad_slide.setText(_translate("MainWindow", "load_slide"))
         self.db_action_load.setText(_translate("MainWindow", "load"))
         self.actionSearch.setText(_translate("MainWindow", "search"))
@@ -96,7 +104,8 @@ class Ui_MainWindow(object):
         self.action_show_query_tile.setText(_translate("MainWindow", "show query tile"))
         self.query_load_action.setText(_translate("MainWindow", "load"))
         self.action_select_all_images.setText(_translate("MainWindow", "select all images"))
+        self.actionSdf.setText(_translate("MainWindow", "sdf"))
+        self.actionStuff1.setText(_translate("MainWindow", "stuff1"))
 
 from slide_list_view_47.widgets.slide_list_widget import SlideListWidget
 from slide_viewer_47.widgets.slide_viewer import SlideViewer
-from slide_viewer_47.widgets.slide_viewer_menu import SlideViewerMenu

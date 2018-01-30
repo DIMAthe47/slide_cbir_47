@@ -71,7 +71,7 @@
      <string>db</string>
     </property>
    </widget>
-   <widget class="SlideViewerMenu" name="query_menu">
+   <widget class="QMenu" name="query_menu">
     <property name="title">
      <string>query</string>
     </property>
@@ -82,9 +82,15 @@
     </property>
     <addaction name="action_select_all_images"/>
    </widget>
+   <widget class="QMenu" name="results_menu">
+    <property name="title">
+     <string>results</string>
+    </property>
+   </widget>
    <addaction name="db_menu"/>
    <addaction name="query_menu"/>
    <addaction name="menu_action"/>
+   <addaction name="results_menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionLoad_slide">
@@ -127,6 +133,16 @@
     <string>select all images</string>
    </property>
   </action>
+  <action name="actionSdf">
+   <property name="text">
+    <string>sdf</string>
+   </property>
+  </action>
+  <action name="actionStuff1">
+   <property name="text">
+    <string>stuff1</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -134,11 +150,6 @@
    <extends>QWidget</extends>
    <header>slide_viewer_47.widgets.slide_viewer</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>SlideViewerMenu</class>
-   <extends>QMenu</extends>
-   <header>slide_viewer_47.widgets.slide_viewer_menu</header>
   </customwidget>
   <customwidget>
    <class>SlideListWidget</class>
