@@ -24,7 +24,8 @@ import json_utils
 from model_generators import *
 import openslide
 
-from slide_list_view_47.model.role_funcs import filepath_to_slideviewparams, imagepath_decoration_func
+from slide_list_view_47.model.role_funcs import filepath_to_slideviewparams, imagepath_decoration_func, \
+    decoration_size_func_factory
 from slide_list_view_47.model.slide_list_model import SlideListModel
 from slide_list_view_47.widgets.actions.on_get_selected_items_action import OnGetSelectedItemsDataAction
 from slide_list_view_47.widgets.actions.on_load_items_action import OnLoadItemsAction
@@ -134,11 +135,13 @@ def build_query_tile_descriptor_model(img_path, tile_rect, level,
 
 class CbirMainWindow(QMainWindow):
     def __init__(self, parent=None):
-        super(CbirMainWindow, self).__init__()
+        super().__init__()
         self.setWindowTitle("CBIR GUI")
-        self.resize(*main_window_size)
         self.ui = Ui_MainWindow()
+        self.resize(*main_window_size)
         self.ui.setupUi(self)
+
+    def after_show(self):
         self.setup_base_items_widget()
         self.setup_query_viewer()
         self.setup_result_items_widget()
@@ -173,8 +176,13 @@ class CbirMainWindow(QMainWindow):
         # self.base_items_widget.list_model.update_role_func(Qt.DecorationRole,
         #                                                    descriptor_tile_model_decoration_func)
         self.base_items_widget.list_model.update_role_func(Qt.DisplayRole, descriptor_tile_model_to_str)
-        self.base_items_widget.list_model.update_role_func(SlideListModel.SlideViewParamsRole,
-                                                           descriptor_tile_model_to_slide_view_params)
+        # self.base_items_widget.list_model.update_role_func(SlideListModel.SlideViewParamsRole,
+        #                                                    descriptor_tile_model_to_slide_view_params)
+        self.base_items_widget.list_model.slide_view_params_getter=descriptor_tile_model_to_slide_view_params
+
+        self.base_items_widget.list_model.update_role_func(SlideListModel.DecorationSizeOrRatioRole,
+                                                           decoration_size_func_factory(
+                                                               self.base_items_widget.list_view, 0.5, 0.5))
         self.base_items_widget.list_model.slide_view_params_setter = slideviewparams_setter
         self.base_items_widget.list_view.setItemDelegate(SlideViewerDelegate())
 
@@ -190,8 +198,12 @@ class CbirMainWindow(QMainWindow):
         self.result_items_widget.list_view.setSelectionMode(QAbstractItemView.NoSelection)
 
         self.result_items_widget.list_model.update_role_func(Qt.DisplayRole, descriptor_tile_model_to_str)
-        self.result_items_widget.list_model.update_role_func(SlideListModel.SlideViewParamsRole,
-                                                             descriptor_tile_model_to_slide_view_params)
+        # self.result_items_widget.list_model.update_role_func(SlideListModel.SlideViewParamsRole,
+        #                                                      descriptor_tile_model_to_slide_view_params)
+        self.result_items_widget.list_model.slide_view_params_getter=descriptor_tile_model_to_slide_view_params
+        self.result_items_widget.list_model.update_role_func(SlideListModel.DecorationSizeOrRatioRole,
+                                                           decoration_size_func_factory(
+                                                               self.result_items_widget.list_view, 0.2, 0.5))
         self.result_items_widget.list_model.slide_view_params_setter = slideviewparams_setter
         self.result_items_widget.list_view.setItemDelegate(SlideViewerDelegate())
 
@@ -287,6 +299,7 @@ def main():
     QPixmapCache.clear()
     win = CbirMainWindow()
     win.show()
+    win.after_show()
     # win.init_view_after_show()
     sys.exit(app.exec_())
 

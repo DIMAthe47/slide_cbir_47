@@ -14,7 +14,7 @@ start_db_filepathes_to_models = [
 ]
 start_selection_rect = (0, 0, 500, 500)
 
-main_window_size = (1300, 800)
+main_window_size = (1500, 1000)
 
 result_items_icon_max_size_or_ratio = (200, 0.5)
 base_items_icon_max_size_or_ratio = (100, 0.25)
