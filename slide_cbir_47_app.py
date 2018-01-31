@@ -1,21 +1,18 @@
 import sys
 from datetime import datetime
-from functools import lru_cache
 
 from PyQt5 import QtWidgets
 
 import os
-from PyQt5.QtCore import QRectF, Qt, QSize
-from PyQt5.QtGui import QColor, QPixmapCache
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QApplication, QMainWindow, QInputDialog, QMessageBox, QAbstractItemView
 
 from cbir_core.computer import model_utils, computer_utils
 from cbir_core.computer.model_utils import find_image_path, find_downsample
 from config_constants import start_query_slide_path, start_db_filepathes_to_models, start_selection_rect, \
-    main_window_size, result_items_icon_max_size_or_ratio, cache_size_in_kb, \
-    base_items_icon_max_size_or_ratio
+    main_window_size, cache_size_in_kb
 from descriptor_tile_models import DescriptorTileModels
-from elapsed_timer import elapsed_timer
 import numpy as np
 
 from designer.cbir_main_window import Ui_MainWindow
@@ -24,7 +21,7 @@ import json_utils
 from model_generators import *
 import openslide
 
-from slide_list_view_47.model.role_funcs import slidepath_to_slideviewparams, slidepath_to_pximap, \
+from slide_list_view_47.model.role_funcs import slidepath_to_pximap, \
     decoration_size_func_factory, item_to_pixmap_through_slideviewparams_factory
 from slide_list_view_47.model.slide_list_model import SlideListModel
 from slide_list_view_47.widgets.actions.list_view_menu import ListViewMenu
@@ -33,10 +30,8 @@ from slide_list_view_47.widgets.actions.on_load_items_action import OnLoadItemsA
 from slide_list_view_47.widgets.slide_viewer_delegate import SlideViewerDelegate
 from slide_viewer_47.common.slide_view_params import SlideViewParams
 from slide_viewer_47.widgets.menu.on_load_slide_action import OnLoadSlideAction
-from slide_viewer_47.widgets.menu.slide_viewer_menu import SlideViewerMenu
 from slide_viewer_47.widgets.menu.slide_viewer_view_menu import SlideViewerViewMenu
 from slide_viewer_47.widgets.slide_viewer import SlideViewer
-from tiling_utils import get_n_columns_n_rows_for_tile_size, gen_slice_rect_n
 
 
 def excepthook(excType, excValue, tracebackobj):
@@ -66,13 +61,14 @@ def descriptor_tile_model_to_slide_view_params(item: DescriptorTileModels):
 
 
 def descriptor_tile_model_to_str(item: DescriptorTileModels):
-    tiles_descriptors_model = item.models[0]
+    tiles_descriptors_model = item.slide_tiling_models["models"][0]
     return build_item_text(tiles_descriptors_model)
 
 
 def descriptor_tile_model_decoration_func(tiles_descritpors_models: dict, icon_size: QSize):
-    img_path = find_image_path(tiles_descritpors_models[0])
-    return slidepath_to_pximap(img_path, icon_size)
+    # img_path = find_image_path(tiles_descritpors_models[0])
+    slide_path = tiles_descritpors_models.slide_tiling_models["slide_path"]
+    return slidepath_to_pximap(slide_path, icon_size)
 
 
 def slideviewparams_setter(items, index, value):
@@ -140,10 +136,10 @@ def build_query_tile_descriptor_model(img_path, tile_rect, level,
 class CbirMainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__()
-        self.setWindowTitle("CBIR GUI")
         self.ui = Ui_MainWindow()
         self.resize(*main_window_size)
         self.ui.setupUi(self)
+        self.setWindowTitle("slide_cbir_47")
 
     def after_show(self):
         self.setup_base_items_widget()
@@ -174,7 +170,7 @@ class CbirMainWindow(QMainWindow):
             descriptor_tile_model_to_str, descriptor_tile_model_to_slide_view_params)
 
     def setup_action_menu(self):
-        action_search = OnGetSelectedItemsDataAction("search",  self.ui.menu_action)
+        action_search = OnGetSelectedItemsDataAction("search", self.ui.menu_action)
         action_search.set_list_view(self.base_items_widget.list_view)
         action_search.set_data_consumer(self.on_search_action)
         # self.ui.menu_action.addAction(action_search)
@@ -218,7 +214,7 @@ class CbirMainWindow(QMainWindow):
         self.result_items_widget.list_model.slide_view_params_getter = descriptor_tile_model_to_slide_view_params
         self.result_items_widget.list_model.update_role_func(SlideListModel.DecorationSizeOrRatioRole,
                                                              decoration_size_func_factory(
-                                                                 self.result_items_widget.list_view, 0.2, 0.5))
+                                                                 self.result_items_widget.list_view, 0.5, 0.5))
         self.result_items_widget.list_model.slide_view_params_setter = slideviewparams_setter
         self.result_items_widget.list_view.setItemDelegate(SlideViewerDelegate())
 
@@ -238,7 +234,7 @@ class CbirMainWindow(QMainWindow):
                                     tiles_descriptors_models.models]
 
         if not tiles_descriptors_models or len(tiles_descriptors_models) == 0:
-            QMessageBox.question(self, 'Error', "No models selected", QMessageBox.Ok)
+            QMessageBox.question(self, 'Error', "No slide_tiling_models selected", QMessageBox.Ok)
             return
 
         n_selected_images = len(selected_tiles_descriptors_models_arr)
