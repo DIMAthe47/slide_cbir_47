@@ -9,28 +9,28 @@ descriptor_models = [
             "dtype": "int"
         },
     },
-    {
-        "name": "histogram",
-        "params": {
-            "n_bins": 128,
-            "density": True,
-            "dtype": "int"
-        },
-    },
-    {
-        "name": "vgg16",
-        "params": {
-            "layer_name": "fc1",
-            "chunk_size": 30
-        },
-    },
-    {
-        "name": "vgg16",
-        "params": {
-            "layer_name": "fc2",
-            "chunk_size": 30
-        },
-    },
+    # {
+    #     "name": "histogram",
+    #     "params": {
+    #         "n_bins": 128,
+    #         "density": True,
+    #         "dtype": "int"
+    #     },
+    # },
+    # {
+    #     "name": "vgg16",
+    #     "params": {
+    #         "layer_name": "fc1",
+    #         "chunk_size": 30
+    #     },
+    # },
+    # {
+    #     "name": "vgg16",
+    #     "params": {
+    #         "layer_name": "fc2",
+    #         "chunk_size": 30
+    #     },
+    # },
 ]
 
 # slide_pathes = [
@@ -38,7 +38,9 @@ descriptor_models = [
 #     r'C:\Users\DIMA\Downloads\svs\CMU-1-JP2K-33005.svs',
 #     r'C:\Users\DIMA\Downloads\svs\CMU-1.svs',
 # ]
-slide_dir = r"C:\Users\DIMA\PycharmProjects\slide_cbir_47\downloads\images"
+# slide_dir = r"C:\Users\DIMA\PycharmProjects\slide_cbir_47\downloads\images"
+slide_dir = r"C:\Users\dmitriy\PycharmProjects\slide_cbir_47\downloads\slides\Aperio"
+
 slide_pathes = [os.path.join(slide_dir, f) for f in os.listdir(slide_dir)]
 
 

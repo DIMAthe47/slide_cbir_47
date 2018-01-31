@@ -52,7 +52,8 @@ def build_item_text(tiles_descriptors_model):
 
 
 def filepath_to_tiles_descritpors_model(filepath):
-    tiles_descritpors_models = json_utils.read(filepath)
+    slide_tiling_models = json_utils.read(filepath)
+    tiles_descritpors_models = slide_tiling_models["slide_tiling_models"]
     return DescriptorTileModels(tiles_descritpors_models)
 
 
@@ -61,7 +62,7 @@ def descriptor_tile_model_to_slide_view_params(item: DescriptorTileModels):
 
 
 def descriptor_tile_model_to_str(item: DescriptorTileModels):
-    tiles_descriptors_model = item.slide_tiling_models["models"][0]
+    tiles_descriptors_model = item.slide_tiling_models["slide_tiling_models"][0]
     return build_item_text(tiles_descriptors_model)
 
 
@@ -71,9 +72,9 @@ def descriptor_tile_model_decoration_func(tiles_descritpors_models: dict, icon_s
     return slidepath_to_pximap(slide_path, icon_size)
 
 
-def slideviewparams_setter(items, index, value):
-    item: DescriptorTileModels = items[index.row()]
-    item.slide_view_params = value
+# def slideviewparams_setter(items, index, value):
+#     item: DescriptorTileModels = items[index.row()]
+#     item.slide_view_params = value
 
 
 def tiles_descriptors_model_to_str(tiles_descriptors_model):
@@ -99,6 +100,7 @@ def build_result_item(distances, tiles_descriptor_model):
     img_path = find_image_path(tiles_descriptor_model)
     slide_view_params = SlideViewParams(img_path, grid_rects_0_level=rect_tiles, grid_colors_0_level=colors,
                                         grid_visible=True)
+
     item = DescriptorTileModels([tiles_descriptor_model])
     item.slide_view_params = slide_view_params
     return item
@@ -205,7 +207,8 @@ class CbirMainWindow(QMainWindow):
 
     def setup_result_items_widget(self):
         self.result_items_widget = self.ui.bottom_widget
-        self.result_items_widget.list_view.setViewMode(QtWidgets.QListView.IconMode)
+        # self.result_items_widget.list_view.setViewMode(QtWidgets.QListView.IconMode)
+        self.result_items_widget.list_view.setViewMode(QtWidgets.QListView.ListMode)
         self.result_items_widget.list_view.setSelectionMode(QAbstractItemView.NoSelection)
 
         self.result_items_widget.list_model.update_role_func(Qt.DisplayRole, descriptor_tile_model_to_str)
@@ -215,8 +218,8 @@ class CbirMainWindow(QMainWindow):
         self.result_items_widget.list_model.update_role_func(SlideListModel.DecorationSizeOrRatioRole,
                                                              decoration_size_func_factory(
                                                                  self.result_items_widget.list_view, 0.5, 0.5))
-        self.result_items_widget.list_model.slide_view_params_setter = slideviewparams_setter
-        self.result_items_widget.list_view.setItemDelegate(SlideViewerDelegate())
+        # self.result_items_widget.list_model.slide_view_params_setter = slideviewparams_setter
+        # self.result_items_widget.list_view.setItemDelegate(SlideViewerDelegate())
 
     def on_select_all_images(self):
         self.base_items_widget.list_view.selectAll()
@@ -231,7 +234,7 @@ class CbirMainWindow(QMainWindow):
         selected_tiles_descriptors_models_arr = items
         tiles_descriptors_models = [tiles_descriptor_model for tiles_descriptors_models in
                                     selected_tiles_descriptors_models_arr for tiles_descriptor_model in
-                                    tiles_descriptors_models.models]
+                                    tiles_descriptors_models.slide_tiling_models["slide_tiling_models"]]
 
         if not tiles_descriptors_models or len(tiles_descriptors_models) == 0:
             QMessageBox.question(self, 'Error', "No slide_tiling_models selected", QMessageBox.Ok)
