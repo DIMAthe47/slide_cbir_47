@@ -19,9 +19,7 @@ def main():
     win = CbirMainWindow()
     win.show()
     win.after_show()
-    win.db_list_view_menu.item_mode_menu.delegate_mode_action.trigger()
-    win.results_list_view_menu.item_mode_menu.delegate_mode_action.trigger()
-    # win.init_view_after_show()
+
     sys.exit(app.exec_())
 
 

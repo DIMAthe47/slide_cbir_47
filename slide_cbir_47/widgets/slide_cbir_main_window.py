@@ -5,7 +5,8 @@ import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QAbstractItemView, QMessageBox, QInputDialog
 
-from slide_cbir_47.slide_cbir_47_config import main_window_size, start_db_filepathes_to_models, base_items_icon_max_size_or_ratio, \
+from slide_cbir_47.slide_cbir_47_config import main_window_size, start_db_filepathes_to_slide_tiles_descriptors_models, \
+    base_items_icon_max_size_or_ratio, \
     start_query_slide_path, start_selection_rect, result_items_icon_max_size_or_ratio
 from cbir_core.computer import computer_utils
 from slide_cbir_47.model.slide_tiles_descriptors_models_view_item import SlideTilesDescriptorsModelsViewItem
@@ -44,6 +45,8 @@ class CbirMainWindow(QMainWindow):
         self.setup_results_menu()
         self.setup_query_menu()
         self.setup_action_menu()
+        self.db_list_view_menu.item_mode_menu.delegate_mode_action.trigger()
+        self.results_list_view_menu.item_mode_menu.delegate_mode_action.trigger()
 
     def setup_query_menu(self):
         on_load_slide_action = OnLoadSlideAction("&load", self.ui.query_menu, self.query_viewer)
@@ -76,9 +79,9 @@ class CbirMainWindow(QMainWindow):
     def setup_base_items_widget(self):
         self.base_items_widget = self.ui.left_widget
         self.base_items_widget.list_view.setViewMode(QtWidgets.QListView.ListMode)
-        if start_db_filepathes_to_models:
+        if start_db_filepathes_to_slide_tiles_descriptors_models:
             items = [filepath_to_slide_tiles_descriptors_models_view_item(source) for source in
-                     start_db_filepathes_to_models]
+                     start_db_filepathes_to_slide_tiles_descriptors_models]
             self.base_items_widget.list_model.update_items(items)
 
         self.base_items_widget.list_model.update_role_func(SlideListModel.DecorationSizeOrRatioRole,
@@ -152,7 +155,7 @@ class CbirMainWindow(QMainWindow):
             result_item = build_result_slide_tiles_descriptors_models_view_item(distances,
                                                                                 chosen_tiles_descriptors_model)
             result_items.append(result_item)
-        self.statusBar().showMessage("Searching done")
+        self.statusBar().showMessage("Searching done. Visualization might take several seconds")
         self.result_items_widget.list_model.update_items(result_items)
 
         # nearest_indices_model = generate_nearest_indices_model(distance_model, -1, "computed/nearest_indices.hdf5")

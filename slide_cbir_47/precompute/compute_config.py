@@ -9,14 +9,14 @@ descriptor_models = [
             "dtype": "int"
         },
     },
-    # {
-    #     "name": "histogram",
-    #     "params": {
-    #         "n_bins": 128,
-    #         "density": True,
-    #         "dtype": "int"
-    #     },
-    # },
+    {
+        "name": "histogram",
+        "params": {
+            "n_bins": 128,
+            "density": True,
+            "dtype": "int"
+        },
+    },
     {
         "name": "vgg16",
         "params": {
@@ -24,14 +24,16 @@ descriptor_models = [
             "chunk_size": 30
         },
     },
-    # {
-    #     "name": "vgg16",
-    #     "params": {
-    #         "layer_name": "fc2",
-    #         "chunk_size": 30
-    #     },
-    # },
+    {
+        "name": "vgg16",
+        "params": {
+            "layer_name": "fc2",
+            "chunk_size": 30
+        },
+    },
 ]
+
+tile_size = (224, 224)
 
 
 def get_path_for_computed_hdf5(slide_path):

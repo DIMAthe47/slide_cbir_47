@@ -28,10 +28,10 @@ def download_file(host, dir, filename, destination_dir):
 def main():
     destination_dir = r"C:\Users\DIMA\PycharmProjects\slide_cbir_47\temp\slides\hydroxyzine\Kidney"
     host = 'ftp.biosciencedbc.jp'
-    dir = "archive/open-tggates-pathological-images/LATEST/images/hydroxyzine/Kidney"
-    filenames = get_filenames(host, dir)
+    ftp_dir = "archive/open-tggates-pathological-images/LATEST/images/hydroxyzine/Kidney"
+    filenames = get_filenames(host, ftp_dir)
     for filename in filenames:
-        download_file(host, dir, filename, destination_dir)
+        download_file(host, ftp_dir, filename, destination_dir)
 
 
 if __name__ == '__main__':
