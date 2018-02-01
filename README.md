@@ -2,7 +2,12 @@
 A pyqt5 GUI for CBIR in whole-slide images with [Openslide](http://openslide.org).
 
 Project depends on:
-- [cbir](https://github.com/DIMAthe47/cbir)
+- [cbir_47](https://github.com/DIMAthe47/cbir_47), which depends on
+  - keras
+  - skimage
+  - sklearn
+  - [quantization_47](https://github.com/DIMAthe47/quantization_47)
+  - [common_utils_47](https://github.com/DIMAthe47/common_utils_47)
 - [slide_viewer_47](https://github.com/DIMAthe47/slide_viewer_47)
 - [slide_list_view_47](https://github.com/DIMAthe47/slide_list_view_47)
 
