@@ -4,7 +4,7 @@ import openslide
 
 from model_generators.descriptor_model_generators import descriptor_type__model_generator
 from model_generators.image_transform_model_generators import generate_pilimage_to_resizedpilimage_model
-from precompute.compute_config import slide_pathes, descriptor_models, get_path_for_computed_hdf5, \
+from slide_cbir_47.precompute.compute_config import slide_pathes, descriptor_models, get_path_for_computed_hdf5, \
     get_path_for_model_json
 
 

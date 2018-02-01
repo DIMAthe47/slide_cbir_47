@@ -3,7 +3,7 @@ from concurrent.futures import ProcessPoolExecutor
 import json_utils
 from cbir_core.computer.computer_utils import compute_model
 
-from precompute.compute_config import slide_pathes, get_path_for_model_json
+from slide_cbir_47.precompute.compute_config import slide_pathes, get_path_for_model_json
 
 from concurrent.futures import wait
 

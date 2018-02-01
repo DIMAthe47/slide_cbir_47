@@ -1,8 +1,8 @@
 import sys
 from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QApplication
-from app_config import cache_size_in_kb
-from slide_cbir_main_window import CbirMainWindow
+from slide_cbir_47.slide_cbir_47_config import cache_size_in_kb
+from slide_cbir_47.widgets.slide_cbir_main_window import CbirMainWindow
 
 
 def excepthook(excType, excValue, tracebackobj):

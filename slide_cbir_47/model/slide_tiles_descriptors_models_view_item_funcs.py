@@ -6,7 +6,7 @@ import openslide
 import json_utils
 from cbir_core.computer import model_utils, computer_utils
 from cbir_core.computer.model_utils import find_image_path, find_downsample
-from slide_tiles_descriptors_models_view_item import SlideTilesDescriptorsModelsViewItem
+from slide_cbir_47.model.slide_tiles_descriptors_models_view_item import SlideTilesDescriptorsModelsViewItem
 from slide_viewer_47.common.slide_view_params import SlideViewParams
 
 

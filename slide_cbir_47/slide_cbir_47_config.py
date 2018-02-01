@@ -1,5 +1,5 @@
 import os
-from precompute.compute_config import models_dir
+from slide_cbir_47.precompute.compute_config import models_dir
 
 # start_query_slide_path = r'C:\Users\dmitriy\Downloads\JP2K-33003-1.svs'
 # start_query_slide_path = '/home/dimathe47/Downloads/JP2K-33003-1.svs'

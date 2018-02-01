@@ -5,11 +5,11 @@ import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QAbstractItemView, QMessageBox, QInputDialog
 
-from app_config import main_window_size, start_db_filepathes_to_models, base_items_icon_max_size_or_ratio, \
+from slide_cbir_47.slide_cbir_47_config import main_window_size, start_db_filepathes_to_models, base_items_icon_max_size_or_ratio, \
     start_query_slide_path, start_selection_rect, result_items_icon_max_size_or_ratio
 from cbir_core.computer import computer_utils
-from slide_tiles_descriptors_models_view_item import SlideTilesDescriptorsModelsViewItem
-from designer.cbir_main_window import Ui_MainWindow
+from slide_cbir_47.model.slide_tiles_descriptors_models_view_item import SlideTilesDescriptorsModelsViewItem
+from slide_cbir_47.designer.cbir_main_window import Ui_MainWindow
 from model_generators import generate_distance_matrix_model
 from slide_list_view_47.model.role_funcs import item_to_pixmap_through_slideviewparams_factory, \
     decoration_size_func_factory
@@ -17,7 +17,7 @@ from slide_list_view_47.model.slide_list_model import SlideListModel
 from slide_list_view_47.widgets.actions.list_view_menu import ListViewMenu
 from slide_list_view_47.widgets.actions.on_get_selected_items_action import OnGetSelectedItemsDataAction
 from slide_list_view_47.widgets.actions.on_load_items_action import OnLoadItemsAction
-from slide_tiles_descriptors_models_view_item_funcs import \
+from slide_cbir_47.model.slide_tiles_descriptors_models_view_item_funcs import \
     slide_tiles_descriptors_models_view_item_to_slide_view_params, slide_tiles_descriptors_models_view_item_to_str, \
     tiles_descriptors_model_to_str, filepath_to_slide_tiles_descriptors_models_view_item, \
     build_result_slide_tiles_descriptors_models_view_item, build_query_tiles_descriptors_model
