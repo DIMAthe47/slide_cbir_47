@@ -21,34 +21,64 @@
        <enum>QLayout::SetDefaultConstraint</enum>
       </property>
       <item>
-       <layout class="QHBoxLayout" name="top_layout" stretch="1,1">
+       <layout class="QHBoxLayout" name="top_layout" stretch="0,0">
+        <property name="spacing">
+         <number>3</number>
+        </property>
         <item>
-         <widget class="SlideListWidget" name="left_widget" native="true"/>
+         <widget class="QGroupBox" name="top_right_group_box">
+          <property name="title">
+           <string>db_models</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="SlideListWidget" name="left_widget" native="true"/>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
-         <widget class="SlideViewer" name="right_widget" native="true"/>
+         <widget class="QGroupBox" name="top_left_group_box">
+          <property name="title">
+           <string>query_slide</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_3">
+           <item>
+            <widget class="SlideViewer" name="right_widget" native="true"/>
+           </item>
+          </layout>
+         </widget>
         </item>
        </layout>
       </item>
       <item>
        <layout class="QHBoxLayout" name="bottom_layout" stretch="0">
+        <property name="spacing">
+         <number>3</number>
+        </property>
         <property name="sizeConstraint">
          <enum>QLayout::SetDefaultConstraint</enum>
         </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
         <item>
-         <widget class="SlideListWidget" name="bottom_widget" native="true">
-          <property name="enabled">
-           <bool>true</bool>
+         <widget class="QGroupBox" name="bottom_group_box">
+          <property name="title">
+           <string>results</string>
           </property>
-          <property name="autoFillBackground">
-           <bool>false</bool>
-          </property>
-          <property name="locale">
-           <locale language="English" country="UnitedStates"/>
-          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <item>
+            <widget class="SlideListWidget" name="bottom_widget" native="true">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="autoFillBackground">
+              <bool>false</bool>
+             </property>
+             <property name="locale">
+              <locale language="English" country="UnitedStates"/>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
         </item>
        </layout>

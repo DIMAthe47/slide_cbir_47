@@ -39,4 +39,4 @@ Examples of whole-slide images can be downloaded from [openslide-testdata](http:
 
 Screenshot of slide_cbir_47:
 
-![screenshot](/app_screen.png)
+![screenshot](/slide_cbir_47_app_screen.png)
