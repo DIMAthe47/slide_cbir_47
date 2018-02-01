@@ -25,7 +25,7 @@ Project depends on:
 - [run descriptors computation](/slide_cbir_47/precompute/compute_models_parallel.py) (time-consuming)(very time-consuming if you selected vgg16 descriptor type)
 - [configure ui-specific options](/slide_cbir_47/slide_cbir_47_config.py)
 - run [gui app](/slide_cbir_47/slide_cbir_47_app.py)
-- select collection of db-slides to search in (left pane)
+- select collection of json-models with proper db-slides to search in (left pane)
 - select tile in query-slide viewer (right pane)
 - select in menu "actions"->"search in selected db_models"
 - search results (represented as intensities proportional to distances between tiles) will be populated (bottom pane)
