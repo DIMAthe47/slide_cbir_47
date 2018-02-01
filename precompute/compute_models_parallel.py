@@ -1,32 +1,54 @@
-import multiprocessing
-import os
 from concurrent.futures import ProcessPoolExecutor
 
 import json_utils
-from cbir_core.computer.computer_utils import compute_model, compute_models
+from cbir_core.computer.computer_utils import compute_model
 
-from precompute.precompute_config import slide_pathes, get_path_for_model_json
+from precompute.compute_config import slide_pathes, get_path_for_model_json
 
 from concurrent.futures import wait
 
+import multiprocessing
 
-def process_slide_tiling_models(slide_tiling_models):
-    slide_tiling_model_items = slide_tiling_models["models"]
-    compute_models(slide_tiling_model_items)
-    print("slide_tiling_models for slide done: {}"(slide_tiling_model_items["slide_path"]))
+
+def process_slide_tilimg_models_vgg16(slide_tiles_descriptors_models):
+    futures = set()
+    with ProcessPoolExecutor(max_workers=1) as executor:
+        for model_item in slide_tiles_descriptors_models:
+            future = executor.submit(process_slide_tiling_model_item, model_item)
+            futures.add(future)
+
+        not_done, done = wait(futures)
+        print("not_done, done  : ", not_done, done)
+
+
+def process_slide_tiling_model_item(slide_tiling_model_item):
+    compute_model(slide_tiling_model_item)
 
 
 def main():
     futures = set()
-    with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count() - 1) as executor:
-        for slide_path in slide_pathes:
-            model_path = get_path_for_model_json(slide_path)
-            slide_tiling_models = json_utils.read(model_path)
-            future = executor.submit(process_slide_tiling_models, slide_tiling_models)
+    max_workers = multiprocessing.cpu_count() - 1
+
+    models_for_gpu = []
+    models_for_cpu = []
+    for slide_path in slide_pathes:
+        model_path = get_path_for_model_json(slide_path)
+        slide_tiling_models = json_utils.read(model_path)
+        for model_item in slide_tiling_models["slide_tiles_descriptors_models"]:
+            if model_item["computer_func_name"] == "vgg16":
+                models_for_gpu.append(model_item)
+            else:
+                models_for_cpu.append(model_item)
+
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        future = executor.submit(process_slide_tilimg_models_vgg16, models_for_gpu)
+        futures.add(future)
+        for model_item in models_for_cpu:
+            future = executor.submit(process_slide_tiling_model_item, model_item)
             futures.add(future)
 
         done, not_done = wait(futures)
-        print("done,not_done: {}, {}", done, not_done)
+        print("done, not_done: ", done, not_done)
 
 
 if __name__ == '__main__':

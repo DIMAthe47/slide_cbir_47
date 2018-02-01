@@ -80,7 +80,6 @@ class Ui_MainWindow(object):
         self.actionSdf.setObjectName("actionSdf")
         self.actionStuff1 = QtWidgets.QAction(MainWindow)
         self.actionStuff1.setObjectName("actionStuff1")
-        self.menu_action.addAction(self.action_select_all_images)
         self.menubar.addAction(self.db_menu.menuAction())
         self.menubar.addAction(self.query_menu.menuAction())
         self.menubar.addAction(self.menu_action.menuAction())

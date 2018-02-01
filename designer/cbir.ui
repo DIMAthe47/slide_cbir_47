@@ -80,7 +80,6 @@
     <property name="title">
      <string>actions</string>
     </property>
-    <addaction name="action_select_all_images"/>
    </widget>
    <widget class="QMenu" name="results_menu">
     <property name="title">

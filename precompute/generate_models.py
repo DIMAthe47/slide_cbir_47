@@ -2,9 +2,9 @@ import json_utils
 from model_generators import generate_image_model, generate_rect_tiles_model, generate_tiling_model, generate_rgbapilimage_to_rgbpilimage_model, generate_pilimage_to_matrix_model
 import openslide
 
-from model_generators.descriptor_model_generators import generate_models_array, descriptor_type__model_generator
+from model_generators.descriptor_model_generators import descriptor_type__model_generator
 from model_generators.image_transform_model_generators import generate_pilimage_to_resizedpilimage_model
-from precompute.precompute_config import descriptor_models, slide_pathes, get_path_for_computed_hdf5, \
+from precompute.compute_config import slide_pathes, descriptor_models, get_path_for_computed_hdf5, \
     get_path_for_model_json
 
 
@@ -26,13 +26,13 @@ def generate_slide_tiling_model_item(slide_path, descriptor_model, level=0, tile
 
 
 def generate_slide_tiling_models(slide_path, descriptor_models, level=0, tile_size=(224, 224), db_path=None):
-    slide_tiling_model_items = []
+    slide_tiles_descriptors_models = []
     for descriptor_model in descriptor_models:
         slide_tiling_model_item = generate_slide_tiling_model_item(slide_path, descriptor_model, level, tile_size,
                                                                    db_path)
-        slide_tiling_model_items.append(slide_tiling_model_item)
+        slide_tiles_descriptors_models.append(slide_tiling_model_item)
 
-    slide_tiling_models = {"slide_tiling_models": slide_tiling_model_items, "slide_path": slide_path}
+    slide_tiling_models = {"slide_tiles_descriptors_models": slide_tiles_descriptors_models, "slide_path": slide_path}
     return slide_tiling_models
 
 

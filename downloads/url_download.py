@@ -1,4 +1,3 @@
-from ftplib import FTP
 import os
 import urllib.request as req
 
@@ -30,7 +29,7 @@ def main():
         "JP2K-33003-2.svs",
     ]
 
-    destination_dir = r"slides/Aperio"
+    destination_dir = r"C:\Users\DIMA\PycharmProjects\slide_cbir_47\temp\slides\Aperio"
 
     slide_urls = [base_url + "/" + slide_name for slide_name in slide_names]
     file_pathes = [os.path.join(destination_dir, slide_name) for slide_name in slide_names]
