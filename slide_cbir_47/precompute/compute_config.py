@@ -18,6 +18,15 @@ descriptor_models = [
         },
     },
     {
+        "name": "lbp",
+        "params": {
+            "P": 16,
+            "R": 2,
+            "method": "uniform",
+            "dtype": "int"
+        },
+    },
+    {
         "name": "vgg16",
         "params": {
             "layer_name": "fc1",
