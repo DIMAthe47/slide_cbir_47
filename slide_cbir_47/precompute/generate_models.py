@@ -31,7 +31,7 @@ def generate_slide_tiling_models(slide_path, descriptor_models, tile_size, db_pa
     slide_tiles_descriptors_models = []
     level = 0
     for descriptor_model in descriptor_models:
-        slide_tiling_model_item = generate_slide_tiling_model_item(slide_path, descriptor_model, level, tile_size,
+        slide_tiling_model_item = generate_slide_tiling_model_item(slide_path, descriptor_model, tile_size,
                                                                    db_path)
         slide_tiles_descriptors_models.append(slide_tiling_model_item)
 
