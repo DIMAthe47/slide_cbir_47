@@ -13,9 +13,12 @@ start_db_filepathes_to_slide_tiles_descriptors_models = [os.path.join(models_dir
 
 start_selection_rect = (0, 0, 500, 500)
 
-main_window_size = (1500, 1000)
+# main_window_size = (1200, 800)
+main_window_size = None
 
-result_items_icon_max_size_or_ratio = (0.25, 1.0)
-base_items_icon_max_size_or_ratio = (0.5, 0.5)
+# result_items_icon_max_size_or_ratio = (0.25, 0.5)
+# base_items_icon_max_size_or_ratio = (0.5, 0.5)
+base_items_icon_max_size_or_ratio = (200, 200)
+result_items_icon_max_size_or_ratio = (300, 300)
 
 cache_size_in_kb = 700 * 10 ** 3

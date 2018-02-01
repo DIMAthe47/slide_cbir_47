@@ -17,7 +17,8 @@ def main():
     QPixmapCache.setCacheLimit(cache_size_in_kb)
     QPixmapCache.clear()
     win = CbirMainWindow()
-    win.show()
+    win.showMaximized()
+    # win.showFullScreen()
     win.after_show()
 
     sys.exit(app.exec_())

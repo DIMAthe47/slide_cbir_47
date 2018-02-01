@@ -33,8 +33,9 @@ class CbirMainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__()
         self.ui = Ui_MainWindow()
-        self.resize(*main_window_size)
         self.ui.setupUi(self)
+        if main_window_size:
+            self.resize(*main_window_size)
         self.setWindowTitle("slide_cbir_47")
 
     def after_show(self):
