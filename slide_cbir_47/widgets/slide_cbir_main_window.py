@@ -159,6 +159,10 @@ class CbirMainWindow(QMainWindow):
         self.statusBar().showMessage("Searching done. Visualization might take several seconds")
         self.result_items_widget.list_model.update_items(result_items)
 
+        chosen_tiles_descriptors_model_str = tiles_descriptors_model_to_str(chosen_tiles_descriptors_model)
+        self.ui.bottom_group_box.setTitle(
+            "results for tiles_descriptors_model: {}".format(chosen_tiles_descriptors_model_str))
+
         # nearest_indices_model = generate_nearest_indices_model(distance_model, -1, "computed/nearest_indices.hdf5")
         # nearest_indices = computer_utils.compute_model(nearest_indices_model)[0]
         # print(nearest_indices)
