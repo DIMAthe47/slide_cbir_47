@@ -27,7 +27,7 @@ Project depends on:
 - set up [configuration-file](/slide_cbir_47/precompute/compute_config.py) (configuring descriptor types, tile size, path to db-slides, path to descriptors to be computed)
 - use [download_utils](/slide_cbir_47/download_utils) to load some whole-slide images if you havent
 - [generate json-models](/slide_cbir_47/precompute/generate_models.py) for future computation 
-- [run descriptors computation](/slide_cbir_47/precompute/compute_models_parallel.py) (time-consuming)(very time-consuming if you selected vgg16 descriptor type)
+- [run descriptors computation](/slide_cbir_47/precompute/compute_models_parallel.py) (time-consuming)(very time-consuming if you selected vgg16 descriptor type)(one slide image~300mb might take>100 seconds)
 - [configure ui-specific options](/slide_cbir_47/slide_cbir_47_config.py)
 - run [gui app](/slide_cbir_47/slide_cbir_47_app.py)
 - select collection of json-models with proper db-slides to search in (left pane)

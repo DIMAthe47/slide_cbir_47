@@ -34,7 +34,8 @@ def process_slide_tiling_model_item(slide_tiling_model_item):
 
 def main():
     futures = set()
-    max_workers = multiprocessing.cpu_count() - 2
+    # max_workers = multiprocessing.cpu_count() - 2
+    max_workers = 2
 
     models_for_gpu = []
     models_for_cpu = []
@@ -48,8 +49,9 @@ def main():
                 models_for_cpu.append(model_item)
 
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        future = executor.submit(process_slide_tilimg_models_separate, models_for_gpu)
-        futures.add(future)
+        if models_for_gpu:
+            future = executor.submit(process_slide_tilimg_models_separate, models_for_gpu)
+            futures.add(future)
         for model_item in models_for_cpu:
             future = executor.submit(process_slide_tiling_model_item, model_item)
             futures.add(future)
