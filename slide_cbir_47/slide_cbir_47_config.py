@@ -7,8 +7,8 @@ start_db_filepathes_to_slide_tiles_descriptors_models - on startup paths to json
 start_selection_rect - on startup selected rect on query-slide
 """
 
-# start_query_slide_path = r'C:\Users\DIMA\PycharmProjects\slide_cbir_47\temp\slides\Aperio\JP2K-33003-1.svs'
-start_query_slide_path = r"C:\Users\dmitriy\PycharmProjects\slide_cbir_47\temp\slides\Aperio\JP2K-33003-1.svs"
+start_query_slide_path = r'C:\Users\DIMA\PycharmProjects\slide_cbir_47\temp\slides\Aperio\JP2K-33003-1.svs'
+# start_query_slide_path = r"C:\Users\dmitriy\PycharmProjects\slide_cbir_47\temp\slides\Aperio\JP2K-33003-1.svs"
 
 start_db_filepathes_to_slide_tiles_descriptors_models = [os.path.join(models_dir, f) for f in os.listdir(models_dir)]
 
@@ -22,4 +22,4 @@ main_window_size = None
 base_items_icon_max_size_or_ratio = (200, 200)
 result_items_icon_max_size_or_ratio = (300, 300)
 
-cache_size_in_kb = 700 * 10 ** 3
+cache_size_in_kb = 2000 * 10 ** 3

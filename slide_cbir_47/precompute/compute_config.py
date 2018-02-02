@@ -44,7 +44,8 @@ descriptor_models = [
 
 tile_size = (224, 224)
 
-temp_folder = r"C:\Users\dmitriy\PycharmProjects\slide_cbir_47\temp"
+# temp_folder = r"C:\Users\dmitriy\PycharmProjects\slide_cbir_47\temp"
+temp_folder = r"C:\Users\DIMA\PycharmProjects\slide_cbir_47\temp"
 
 
 def get_path_for_computed_hdf5(slide_path):
