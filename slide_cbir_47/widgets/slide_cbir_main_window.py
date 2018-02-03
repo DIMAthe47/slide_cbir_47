@@ -148,7 +148,6 @@ class CbirMainWindow(QMainWindow):
             "list": [query_descriptor]
         }
         for chosen_tiles_descriptors_model in chosen_tiles_descriptors_models:
-            start_datetime = datetime.now()
             distance_model = generate_distance_matrix_model(query_descriptor_model, chosen_tiles_descriptors_model)
             distances = computer_utils.compute_model(distance_model, force=True)
             distances = list(distances)

@@ -52,13 +52,13 @@ def build_result_slide_tiles_descriptors_models_view_item(distances: np.ndarray,
     # alphas = [128 - 128 * dist for dist in normalized_distances]
     # alphas = [128 * 128 ** (-dist) for dist in normalized_distances]
     alphas = 128 ** (1 - normalized_distances)
-    colors = [(0, 255, 0, int(alpha)) for alpha in alphas]
+    # colors = [(0, 255, 0, int(alpha)) for alpha in alphas]
+
     rect_tiles_model = model_utils.find_rect_tiles_model(tiles_descriptors_model)
     rect_tiles = list(computer_utils.compute_model(rect_tiles_model))
     slide_path = find_image_path(tiles_descriptors_model)
-    slide_view_params = SlideViewParams(slide_path, grid_rects_0_level=rect_tiles, grid_colors_0_level=colors,
+    slide_view_params = SlideViewParams(slide_path, grid_rects_0_level=rect_tiles, grid_color_alphas_0_level=alphas,
                                         grid_visible=True)
-
     item = SlideTilesDescriptorsModelsViewItem([tiles_descriptors_model], slide_view_params)
     return item
 
