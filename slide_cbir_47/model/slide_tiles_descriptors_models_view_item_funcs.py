@@ -52,6 +52,7 @@ def build_result_slide_tiles_descriptors_models_view_item(distances: np.ndarray,
     # alphas = [128 - 128 * dist for dist in normalized_distances]
     # alphas = [128 * 128 ** (-dist) for dist in normalized_distances]
     alphas = 128 ** (1 - normalized_distances)
+    alphas = alphas.astype(int)
     # colors = [(0, 255, 0, int(alpha)) for alpha in alphas]
 
     rect_tiles_model = model_utils.find_rect_tiles_model(tiles_descriptors_model)
